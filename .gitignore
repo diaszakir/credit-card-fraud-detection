@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# AI agent local files
+.claude/
+.cursor/
+.codex/
+.aider*
+.continue/
+.copilot/
+
+# Local agent instructions (if not intended for collaboration)
+CLAUDE.local.md
+
+INSTRUCTIONS.md
+AGENTS.md
