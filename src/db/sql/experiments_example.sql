@@ -1,0 +1,18 @@
+-- Example for Adam's Error Analysis page (NOT executed automatically; needs real predictions).
+-- Confusion-matrix counts and the biggest false negatives of one run on the test split.
+-- Replace :run_id with a run_id from model_runs.
+--
+-- SELECT p.y_true, p.y_pred, COUNT(*) AS n
+-- FROM predictions p
+-- JOIN transactions t ON t.transaction_id = p.transaction_id
+-- JOIN splits s       ON s.split_id = t.split_id
+-- WHERE p.run_id = :run_id AND s.split_name = 'test'
+-- GROUP BY p.y_true, p.y_pred;
+--
+-- SELECT t.transaction_id, t.time_sec, t.amount, p.score
+-- FROM predictions p
+-- JOIN transactions t ON t.transaction_id = p.transaction_id
+-- JOIN splits s       ON s.split_id = t.split_id
+-- WHERE p.run_id = :run_id AND s.split_name = 'test' AND p.y_true = 1 AND p.y_pred = 0
+-- ORDER BY t.amount DESC
+-- LIMIT 20;

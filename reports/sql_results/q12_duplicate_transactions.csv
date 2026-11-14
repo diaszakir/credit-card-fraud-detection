@@ -1,0 +1,10 @@
+class_label,copies,n_groups,n_extra_rows
+legitimate,2,600,600
+legitimate,3,66,132
+legitimate,4,80,240
+legitimate,5,10,40
+legitimate,9,2,16
+legitimate,18,2,34
+fraud,2,11,11
+fraud,4,1,3
+fraud,6,1,5

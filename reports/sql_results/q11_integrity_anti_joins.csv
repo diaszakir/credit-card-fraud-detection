@@ -1,0 +1,6 @@
+check_name,n_violations
+transactions_without_features,0
+features_without_transactions,0
+transactions_with_wrong_hour,0
+transactions_without_amount_band,0
+unused_time_slots (informational),0

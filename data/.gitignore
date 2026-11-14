@@ -1,0 +1,14 @@
+# Large or fully reproducible artefacts are NOT committed.
+# Rebuild everything with:  python -m src.data.cli run-all
+raw/*
+interim/*
+processed/*
+
+# Keep the folder structure ...
+!raw/.gitkeep
+!interim/.gitkeep
+!processed/.gitkeep
+
+# ... and the tiny split manifest (transaction_id -> split) that the whole team
+# shares as the single source of truth for train / validation / test.
+!processed/split_manifest.parquet

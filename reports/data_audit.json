@@ -1,0 +1,410 @@
+{
+  "overview": {
+    "n_rows": 284807,
+    "n_columns": 31,
+    "dtypes": {
+      "float64": 30,
+      "int64": 1
+    },
+    "memory_mib_in_pandas": 67.36017990112305
+  },
+  "missing_values": {
+    "total_missing": 0,
+    "columns_with_missing": {}
+  },
+  "duplicates": {
+    "n_repeated_rows": 1081,
+    "n_rows_in_duplicate_groups": 1854,
+    "n_duplicate_groups": 773,
+    "repeated_rows_among_fraud": 19,
+    "repeated_rows_among_legitimate": 1062
+  },
+  "constant_columns": [],
+  "class_balance": {
+    "counts": {
+      "0": 284315,
+      "1": 492
+    },
+    "n_fraud": 492,
+    "n_legitimate": 284315,
+    "fraud_rate_percent": 0.1727485630620034,
+    "imbalance_ratio_legit_per_fraud": 577.8760162601626
+  },
+  "time": {
+    "min": 0.0,
+    "max": 172792.0,
+    "span_hours": 47.99777777777778,
+    "is_sorted_non_decreasing": true,
+    "integer_valued": true,
+    "n_distinct_timestamps": 124592,
+    "max_rows_sharing_one_timestamp": 36
+  },
+  "amount": {
+    "min": 0.0,
+    "max": 25691.16,
+    "mean": 88.34961925093134,
+    "median": 22.0,
+    "n_zero": 1825,
+    "n_negative": 0,
+    "has_at_most_two_decimals": true,
+    "by_class": {
+      "0": {
+        "count": 284315.0,
+        "mean": 88.29102242231328,
+        "median": 22.0,
+        "max": 25691.16
+      },
+      "1": {
+        "count": 492.0,
+        "mean": 122.21132113821139,
+        "median": 9.25,
+        "max": 2125.87
+      }
+    }
+  },
+  "outliers_iqr": {
+    "rule": "values outside [Q1 - 1.5*IQR, Q3 + 1.5*IQR]",
+    "columns_with_most_outliers": [
+      {
+        "column": "V27",
+        "n_outliers": 39163,
+        "pct_outliers": 13.750715396742356
+      },
+      {
+        "column": "Amount",
+        "n_outliers": 31904,
+        "pct_outliers": 11.201971861646658
+      },
+      {
+        "column": "V28",
+        "n_outliers": 30342,
+        "pct_outliers": 10.653530285421356
+      },
+      {
+        "column": "V20",
+        "n_outliers": 27770,
+        "pct_outliers": 9.750462593967143
+      },
+      {
+        "column": "V8",
+        "n_outliers": 24134,
+        "pct_outliers": 8.47380857914307
+      }
+    ],
+    "amount": {
+      "lower_fence": -101.7475,
+      "upper_fence": 184.5125,
+      "n_outliers": 31904,
+      "pct_outliers": 11.201971861646658
+    }
+  },
+  "source_file": {
+    "path": "creditcard.csv",
+    "size_bytes": 150828752,
+    "sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+    "time_column_text": {
+      "n_tokens": 284807,
+      "n_not_plain_integer": 1,
+      "examples": [
+        "1e+05"
+      ]
+    }
+  },
+  "findings": [
+    "No missing values: imputation is not needed.",
+    "1081 rows repeat an earlier row (19 of them fraud); kept, ids stay stable.",
+    "Rows are already ordered by Time, so row position is a chronological id.",
+    "Up to 36 rows share one timestamp: split cuts must not fall between them.",
+    "Fraud is 0.1727% of rows (about 578 legitimate per fraud): plain accuracy is meaningless; use PR-AUC / recall at fixed precision.",
+    "1 Time value(s) are written in scientific notation ['1e+05'], so pandas reads Time as float64; values are still whole seconds and are cast to int32 after a check."
+  ],
+  "memory_optimization": {
+    "total": {
+      "mib_before": 67.36017990112305,
+      "mib_after": 33.95176601409912,
+      "mib_saved": 33.408413887023926,
+      "saved_percent": 49.596681505399204
+    },
+    "columns": [
+      {
+        "column": "Time",
+        "dtype_before": "float64",
+        "dtype_after": "int32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 0.0,
+        "values_identical": true
+      },
+      {
+        "column": "V1",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9490736773791956e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V2",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9544517905646115e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V3",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.959411685290121e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V4",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.946718634619085e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V5",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9427805434886794e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V6",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.950808757590926e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V7",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9593067204923734e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V8",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.949090381474155e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V9",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9450621260450914e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V10",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.954988260045375e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V11",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.946872230068562e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V12",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.944587147175095e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V13",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.952115802415515e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V14",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9445178504341566e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V15",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.953003519969563e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V16",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9393822503790526e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V17",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.955018217037018e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V18",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9484335672825934e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V19",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.950313090245965e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V20",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9454311919861794e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V21",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.946391516469066e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V22",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.945947942545387e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V23",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.950476913255277e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V24",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9450765918924077e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V25",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.94101434052256e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V26",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9393494791051256e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V27",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.9415708358792165e-08,
+        "values_identical": false
+      },
+      {
+        "column": "V28",
+        "dtype_before": "float64",
+        "dtype_after": "float32",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 1.0864524841308594,
+        "max_relative_error": 5.951283163392478e-08,
+        "values_identical": false
+      },
+      {
+        "column": "Amount",
+        "dtype_before": "float64",
+        "dtype_after": "float64",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 2.1729049682617188,
+        "max_relative_error": null,
+        "values_identical": true
+      },
+      {
+        "column": "Class",
+        "dtype_before": "int64",
+        "dtype_after": "int8",
+        "mib_before": 2.1729049682617188,
+        "mib_after": 0.27161312103271484,
+        "max_relative_error": null,
+        "values_identical": true
+      }
+    ]
+  }
+}
