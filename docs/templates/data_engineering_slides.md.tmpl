@@ -1,0 +1,71 @@
+# Presentation content: Data Engineering & SQL (Zhandarbek Zhetpissov)
+
+Slide text for the author's part of the team presentation, generated from the saved results
+(`python -m src.data.cli summary`). Each slide: title, 3–5 bullets, suggested figure, speaker notes.
+Merge into the common deck (.pptx or .pdf); the other members add their own slides.
+
+---
+
+## Slide 1. Data and audit
+
+- ${n_rows} transactions, ${n_columns} columns; ${n_fraud} frauds = ${fraud_rate} % (about ${imbalance_ratio} : 1)
+- ${missing_sentence}; ${n_repeated} rows repeat an earlier row (kept, ids stay stable)
+- Rows already ordered by `Time` → row position = stable `transaction_id`
+- Figure: `reports/figures/eda_01_class_balance.png`
+
+*Notes:* accuracy is useless at this imbalance, hence PR-AUC, recall at fixed precision and threshold tuning. ${time_token_sentence}
+
+## Slide 2. Memory and Parquet
+
+- DataFrame memory ${mem_before} MiB → ${mem_after} MiB (${mem_saved_pct} % smaller): Time `int32`, Class `int8`, V1–V28 `float32`, Amount stays `float64`
+- Every cast is verified (integer-valued, in range, relative error < 1e-6)
+- CSV ${csv_mib} MiB → Parquet ${parquet_mib} MiB (${parquet_saved_pct} % smaller)
+- 3-column projection from Parquet: ${speedup_projection}x the baseline speed
+
+*Notes:* the benchmark runs each variant in its own process; load times are close because pandas' CSV parser is fast, the gains are size, memory and projection. Table: `reports/benchmarks.json`.
+
+## Slide 3. Chronological split without leakage
+
+- Train / validation / test = 70 / 15 / 15 % of rows in time order; cuts never separate rows with the same `Time`
+- Frauds: ${train_fraud} / ${val_fraud} / ${test_fraud}; fraud rate ${train_rate} % / ${val_rate} % / ${test_rate} %
+- Preprocessing and resampling fit on train only; threshold on validation only; test once
+- Figure: `reports/figures/eda_07_split_drift.png`
+
+*Notes:* few frauds in validation and test → noisy precision/recall; the committed `split_manifest.parquet` is the shared source of truth.
+
+## Slide 4. EDA
+
+- Largest correlations with Class (train): ${top_corr_list}
+- V1–V28 nearly uncorrelated with each other (mean |r| = ${v_mean_abs_corr})
+- Highest hourly fraud rate: ${peak_rate} % in hour ${peak_hour} (${peak_fraud} of ${peak_tx})
+- Figures: `eda_03_time_profile.png`, `eda_04_feature_target_correlation.png`; interactive: `eda_08_interactive_time_profile.html`
+
+*Notes:* feature–target statistics use train only, so EDA does not leak validation/test information.
+
+## Slide 5. SQLite and the ER diagram
+
+- Normalised star-like schema: `transactions` + `transaction_features` (1:1) + `splits`, `classes`, `time_slots`, `amount_bands`
+- PK / FK / CHECK / UNIQUE / ON DELETE CASCADE; build verified (counts, sums, `foreign_key_check`, `integrity_check`) before use
+- Figure: `docs/er_diagram.png` (generated from the database)
+
+*Notes:* the 28 features live in a separate table so analytical scans stay narrow; `amount_bands` is joined by a range, not by a key.
+
+## Slide 6. ${n_queries} SQL queries → Pandas
+
+- JOIN (including a range join), GROUP BY / HAVING, scalar subquery, CTE, window functions (RANK, NTILE, LAG, ROW_NUMBER, running SUM)
+- Results loaded into DataFrames with `read_sql_query`; saved to `reports/sql_results/`
+${sql_findings}
+
+*Notes:* the full list with questions is in `docs/report_data_engineering.md`, section 7.
+
+## Slide 7. SQL against Pandas, and verification
+
+- ${pandas_sql_verdict}
+- ${n_crosschecks} SQL queries recomputed independently in Pandas and compared; the pipeline stops on a mismatch
+- One command: `python -m src.data.cli run-all`; console menu: `python -m src.data.cli`
+
+*Notes:* SQL's value here is integrity and joins with model predictions, not speed.
+
+## Contribution (for the contribution slide)
+
+Zhandarbek Zhetpissov: data download and audit, Parquet and memory optimisation, split and `transaction_id`, EDA, SQLite schema and ER diagram, SQL queries, benchmarks, data contract.

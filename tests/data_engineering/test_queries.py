@@ -37,6 +37,9 @@ def test_at_least_eight_queries_and_every_required_construct_is_used():
         assert coverage[construct], f"no query uses {construct}"
     # the course asks for these together; make sure several queries combine them
     assert len(coverage["JOIN"]) >= 8 and len(coverage["window function (OVER)"]) >= 3
+    # a CTE body is not a subquery: only real nested SELECTs count
+    assert "q04_hours_above_average_fraud_rate" in coverage["subquery"]
+    assert "q05_rolling_fraud_rate" not in coverage["subquery"]
 
 
 def test_declared_constructs_match_the_sql_text():

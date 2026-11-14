@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -28,14 +29,22 @@ logger = logging.getLogger(__name__)
 QUERIES_DIR = SQL_DIR / "queries"
 _HEADER_LINE = re.compile(r"^--\s*(\w+):\s*(.*?)\s*$")
 
-# constructs the course requires, detected from the SQL text itself
-REQUIRED_CONSTRUCTS: dict[str, re.Pattern] = {
-    "JOIN": re.compile(r"\bJOIN\b", re.I),
-    "GROUP BY": re.compile(r"\bGROUP\s+BY\b", re.I),
-    "HAVING": re.compile(r"\bHAVING\b", re.I),
-    "CTE (WITH)": re.compile(r"^\s*WITH\b", re.I | re.M),
-    "subquery": re.compile(r"\(\s*SELECT\b", re.I),
-    "window function (OVER)": re.compile(r"\bOVER\b", re.I),
+_SUBQUERY = re.compile(r"(\w+)?\s*\(\s*SELECT\b", re.I)
+
+
+def _has_subquery(code: str) -> bool:
+    """A parenthesised SELECT that is NOT the body of a CTE (``name AS ( SELECT ...)``)."""
+    return any((match.group(1) or "").upper() != "AS" for match in _SUBQUERY.finditer(code))
+
+
+# constructs the course requires, detected from the SQL text itself (comment lines removed)
+REQUIRED_CONSTRUCTS: dict[str, Callable[[str], bool]] = {
+    "JOIN": lambda code: bool(re.search(r"\bJOIN\b", code, re.I)),
+    "GROUP BY": lambda code: bool(re.search(r"\bGROUP\s+BY\b", code, re.I)),
+    "HAVING": lambda code: bool(re.search(r"\bHAVING\b", code, re.I)),
+    "CTE (WITH)": lambda code: bool(re.search(r"^\s*WITH\b", code, re.I | re.M)),
+    "subquery": _has_subquery,
+    "window function (OVER)": lambda code: bool(re.search(r"\bOVER\b", code, re.I)),
 }
 
 
@@ -164,7 +173,7 @@ def describe_queries(queries_dir: Path = QUERIES_DIR) -> pd.DataFrame:
 def detected_constructs(sql: str) -> list[str]:
     """Which of the required constructs appear in the SQL (comments stripped first)."""
     code = "\n".join(line for line in sql.splitlines() if not line.lstrip().startswith("--"))
-    return [name for name, pattern in REQUIRED_CONSTRUCTS.items() if pattern.search(code)]
+    return [name for name, detect in REQUIRED_CONSTRUCTS.items() if detect(code)]
 
 
 def construct_coverage(queries_dir: Path = QUERIES_DIR) -> dict[str, list[str]]:
