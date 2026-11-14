@@ -96,3 +96,32 @@ def step_er_diagram() -> dict:
     from src.db.er_diagram import generate_er_diagram
 
     return generate_er_diagram()
+
+
+def step_sql() -> dict:
+    """Run every SQL query, save the results, rank features and cross-check against Pandas."""
+    from src.config import SQL_RESULTS_DIR
+    from src.db.crosscheck import crosscheck_with_pandas
+    from src.db.queries import feature_separation, get_engine, run_all, save_results
+
+    engine = get_engine()
+    results = run_all(engine)
+    files = save_results(results)
+    separation = feature_separation(results["q10_class_feature_moments"])
+    separation_path = SQL_RESULTS_DIR / "q10_feature_separation.csv"
+    separation.to_csv(separation_path, index=False)
+    checks = crosscheck_with_pandas(engine, load_parquet(TRANSACTIONS_PARQUET_PATH))
+    return {
+        "n_queries": len(results),
+        "files": [str(p) for p in [*files, separation_path]],
+        "crosscheck_with_pandas": checks,
+        "top_separating_features": separation.head(6)[["feature", "standardised_difference"]].to_dict("records"),
+    }
+
+
+def step_benchmark(repeats: int = 3) -> dict:
+    """Storage benchmark (CSV vs Parquet) and SQL-vs-Pandas benchmark; both are saved to JSON."""
+    from src.data.benchmark import run_storage_benchmark
+    from src.db.benchmark_sql import run_sql_vs_pandas
+
+    return {"storage": run_storage_benchmark(repeats=repeats), "pandas_vs_sql": run_sql_vs_pandas()}

@@ -37,7 +37,7 @@ SQLITE_PATH = PROCESSED_DIR / "fraud.db"
 
 AUDIT_JSON_PATH = REPORTS_DIR / "data_audit.json"
 SPLIT_SUMMARY_JSON_PATH = REPORTS_DIR / "split_summary.json"
-BENCHMARK_JSON_PATH = REPORTS_DIR / "benchmark_storage.json"
+BENCHMARK_JSON_PATH = REPORTS_DIR / "benchmarks.json"
 
 # --------------------------------------------------------------------------- #
 # Data source

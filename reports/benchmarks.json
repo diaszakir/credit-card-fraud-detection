@@ -96,5 +96,39 @@
       "frame_mib = DataFrame.memory_usage(deep=True)",
       "peak_above_idle_mib = process peak RSS minus an idle interpreter with pandas + pyarrow imported"
     ]
+  },
+  "pandas_vs_sql": {
+    "repeats": 5,
+    "platform": "darwin",
+    "tasks": [
+      {
+        "task": "hourly counts (GROUP BY)",
+        "pandas_end_to_end_seconds": 0.008264125001005596,
+        "pandas_in_memory_seconds": 0.005364291999285342,
+        "sql_seconds": 0.02445416699993075,
+        "results_agree": true
+      },
+      {
+        "task": "split overview (JOIN + GROUP BY)",
+        "pandas_end_to_end_seconds": 0.030839332997857127,
+        "pandas_in_memory_seconds": 0.02581941700191237,
+        "sql_seconds": 0.06018304099779925,
+        "results_agree": true
+      },
+      {
+        "task": "3-hour rolling rate (CTE + window)",
+        "pandas_end_to_end_seconds": 0.006545166001160396,
+        "pandas_in_memory_seconds": 0.003954834002797725,
+        "sql_seconds": 0.024966083001345396,
+        "results_agree": true
+      },
+      {
+        "task": "exact duplicates over 30 columns (GROUP BY ... HAVING)",
+        "pandas_end_to_end_seconds": 0.30638337500204216,
+        "pandas_in_memory_seconds": 0.2818875829980243,
+        "sql_seconds": 1.5226049999982934,
+        "results_agree": true
+      }
+    ]
   }
 }
