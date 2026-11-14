@@ -1,0 +1,100 @@
+{
+  "storage_formats": {
+    "repeats": 3,
+    "platform": "darwin",
+    "idle_peak_rss_mib": 95.59375,
+    "file_sizes_mib": {
+      "csv": 143.8415069580078,
+      "parquet_float64_zstd": 72.65163707733154,
+      "parquet_optimized_zstd": 43.41159915924072,
+      "parquet_optimized_snappy": 46.38164806365967
+    },
+    "variants": [
+      {
+        "variant": "csv_float64",
+        "seconds_median": 0.0946589170016523,
+        "seconds_all": [
+          0.10300462500163121,
+          0.08949491699968348,
+          0.0946589170016523
+        ],
+        "frame_mib": 67.36017990112305,
+        "peak_rss_mib": 400.65625,
+        "peak_above_idle_mib": 305.0625,
+        "rows": 284807,
+        "columns": 31,
+        "speedup_vs_baseline": 1.0,
+        "frame_memory_vs_baseline": 1.0
+      },
+      {
+        "variant": "csv_chunked_optimized",
+        "seconds_median": 0.4441123750002589,
+        "seconds_all": [
+          0.42931654199855984,
+          0.5039315829999396,
+          0.4441123750002589
+        ],
+        "frame_mib": 33.95176601409912,
+        "peak_rss_mib": 318.046875,
+        "peak_above_idle_mib": 222.453125,
+        "rows": 284807,
+        "columns": 31,
+        "speedup_vs_baseline": 0.21314181349168015,
+        "frame_memory_vs_baseline": 0.504033184946008
+      },
+      {
+        "variant": "parquet_float64",
+        "seconds_median": 0.07858254200255033,
+        "seconds_all": [
+          0.09725058300318778,
+          0.05777808299899334,
+          0.07858254200255033
+        ],
+        "frame_mib": 67.36017990112305,
+        "peak_rss_mib": 298.265625,
+        "peak_above_idle_mib": 202.671875,
+        "rows": 284807,
+        "columns": 31,
+        "speedup_vs_baseline": 1.204579472608308,
+        "frame_memory_vs_baseline": 1.0
+      },
+      {
+        "variant": "parquet_optimized",
+        "seconds_median": 0.06877829099903465,
+        "seconds_all": [
+          0.06040391700298642,
+          0.06877829099903465,
+          0.07687562499995693
+        ],
+        "frame_mib": 33.95176601409912,
+        "peak_rss_mib": 198.453125,
+        "peak_above_idle_mib": 102.859375,
+        "rows": 284807,
+        "columns": 31,
+        "speedup_vs_baseline": 1.376290623490207,
+        "frame_memory_vs_baseline": 0.504033184946008
+      },
+      {
+        "variant": "parquet_optimized_3cols",
+        "seconds_median": 0.04169554100008099,
+        "seconds_all": [
+          0.0324885420013743,
+          0.04169554100008099,
+          0.04569975000049453
+        ],
+        "frame_mib": 3.5310964584350586,
+        "peak_rss_mib": 115.046875,
+        "peak_above_idle_mib": 19.453125,
+        "rows": 284807,
+        "columns": 3,
+        "speedup_vs_baseline": 2.270240767507212,
+        "frame_memory_vs_baseline": 0.05242112570985261
+      }
+    ],
+    "notes": [
+      "seconds = time of the load call only, median of repeats, each in a fresh process",
+      "frame_mib = DataFrame.memory_usage(deep=True)",
+      "peak_above_idle_mib = process peak RSS minus an idle interpreter with pandas + pyarrow imported"
+    ]
+  }
+}
