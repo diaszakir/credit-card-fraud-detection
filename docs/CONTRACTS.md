@@ -86,6 +86,16 @@ df = load_transactions(split="train", columns=["transaction_id", "Time", "Class"
 * Rules that follow from it (project conventions 3-7): fit imputers/scalers/SMOTE/undersampling
   on `train` only; tune the threshold on `validation` only; touch `test` once, at the end.
 * Exact row and fraud counts per split are written to `reports/split_summary.json` by the pipeline.
+  Current values (computed from the real file, 70/15/15):
+
+  | split | rows | frauds | fraud rate | Time range (s) | `transaction_id` range |
+  |---|---|---|---|---|---|
+  | train | 199 364 | 384 | 0.193 % | 0 – 132 928 | 0 – 199 363 |
+  | validation | 42 722 | 56 | 0.131 % | 132 929 – 151 328 | 199 364 – 242 085 |
+  | test | 42 721 | 52 | 0.122 % | 151 329 – 172 792 | 242 086 – 284 806 |
+
+  The nominal validation/test cut (row 242 085) fell on a timestamp shared by two rows
+  (Time = 151 328); the rule above moved it one row forward, which is why validation has one row more.
 
 **PROPOSAL (Dias):** confirm 70/15/15. The fraud rate drifts between splits, so validation and test
 contain few frauds (see `reports/split_summary.json`); precision/recall on them will be noisy and

@@ -24,6 +24,7 @@ PROCESSED_DIR = DATA_DIR / "processed"
 
 REPORTS_DIR = ROOT_DIR / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
+EDA_DIR = REPORTS_DIR / "eda"  # tables and summary of the exploratory analysis
 SQL_RESULTS_DIR = REPORTS_DIR / "sql_results"
 EXPERIMENTS_DIR = REPORTS_DIR / "experiments"  # filled by ML / Evaluation modules
 DOCS_DIR = ROOT_DIR / "docs"
