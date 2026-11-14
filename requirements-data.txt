@@ -1,0 +1,11 @@
+# Dependencies of the Data Engineering & SQL module (Python 3.12).
+# Pinned to the versions the module was developed and tested with.
+# The project-wide requirements.txt is consolidated separately (ML + app deps).
+pandas==3.1.1
+numpy==2.5.4
+pyarrow==26.0.1
+SQLAlchemy==2.1.8
+matplotlib==3.11.2
+seaborn==0.13.2
+plotly==7.1.0
+pytest==9.2.0
