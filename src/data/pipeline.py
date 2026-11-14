@@ -82,3 +82,17 @@ def step_eda(processed_path: Path = TRANSACTIONS_PARQUET_PATH) -> dict:
     from src.data.eda import run_eda  # imported lazily: pulls in matplotlib / plotly
 
     return run_eda(load_parquet(processed_path))
+
+
+def step_build_db() -> dict:
+    """Build and verify ``data/processed/fraud.db`` from the processed Parquet file."""
+    from src.db.builder import build_database  # imported lazily: keeps the data steps light
+
+    return build_database()
+
+
+def step_er_diagram() -> dict:
+    """Regenerate ``docs/er_diagram.png`` and ``docs/er_diagram.md`` from the database."""
+    from src.db.er_diagram import generate_er_diagram
+
+    return generate_er_diagram()

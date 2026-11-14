@@ -37,3 +37,16 @@ def raw_csv(tmp_path, raw_frame):
     path = tmp_path / "creditcard.csv"
     raw_frame.to_csv(path, index=False)
     return path
+
+
+@pytest.fixture
+def processed_frame() -> pd.DataFrame:
+    """Synthetic processed frame (ids + split) spanning ~5 hours."""
+    from src.config import TIME_COLUMN
+    from src.data.memory import optimize_dtypes
+    from src.data.splitting import build_processed_frame
+
+    raw = make_raw_frame(n=3000, n_fraud=90, seed=3)
+    rng = np.random.default_rng(3)
+    raw[TIME_COLUMN] = np.sort(rng.integers(0, 5 * 3600, size=len(raw))).astype("float64")
+    return build_processed_frame(optimize_dtypes(raw))
