@@ -120,9 +120,34 @@ def show_curves(project) -> None:
                    "для сравнения используется PR и AP.")
 
 
+def show_test(project) -> None:
+    """Итоговая оценка test: только сохранённый результат, приложение её не запускает."""
+    from src.evaluation.final_test import load_result
+
+    st.subheader("Итоговая оценка на test")
+    try:
+        document = load_result(project.root)
+    except (OSError, ValueError) as exc:
+        st.warning(f"Файл итоговой оценки повреждён: {exc}")
+        return
+    if document is None:
+        st.info("Итоговая оценка на test ещё не выполнялась. Она запускается один раз командой "
+                "python -m src.evaluation.final_test --confirm после согласования с командой.")
+        return
+    rows = [{"Метрика": key, "Validation": values["validation"], "Test": values["test"]}
+            for key, values in document["validation_vs_test"].items()]
+    st.dataframe(pd.DataFrame(rows), hide_index=True)
+    p_ci, r_ci = document.get("precision_ci"), document.get("recall_ci")
+    met = "выполнено" if document.get("precision_constraint_met") else "НЕ выполнено"
+    st.caption(f"Test: {document['n']} транзакций, fraud {document['n_positive']}. Порог {document['threshold']} "
+               f"не менялся, модель не переобучалась. Требование precision ≥ {document['min_precision']} на test {met}. "
+               + (f"Precision {interval(p_ci)}; " if p_ci else "") + (f"recall {interval(r_ci)}." if r_ci else ""))
+
+
 def render() -> None:
     st.header("Model Comparison")
     project = paths()
     show_selected(project)
+    show_test(project)
     show_curves(project)
     show_table(project)

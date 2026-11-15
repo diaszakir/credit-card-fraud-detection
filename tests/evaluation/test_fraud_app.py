@@ -104,3 +104,20 @@ def test_error_analysis_tabs_use_features_sql_and_saved_importance(data_project)
     assert len(app.main.get("plotly_chart")) == 3  # FN vs TP, FP vs TN, importance
     captions = " ".join(c.value for c in app.main.caption)
     assert "метки совпадают" in captions
+
+
+def test_model_comparison_shows_saved_test_result_only_when_it_exists(data_project):
+    import json
+
+    from src.evaluation import final_test
+
+    app = open_section("Model Comparison")
+    assert any("ещё не выполнялась" in i.value for i in app.info)
+    output = final_test.evaluate_test(data_project["root"], allow_non_real=True)
+    out_dir = data_project["root"] / "reports" / "experiments" / "evaluation"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / final_test.RESULT_JSON).write_text(json.dumps(output["result"], default=list))
+    app = open_section("Model Comparison")
+    assert not app.exception and not app.error
+    assert not any("ещё не выполнялась" in i.value for i in app.info)
+    assert any("Порог" in c.value and "не менялся" in c.value for c in app.main.caption)

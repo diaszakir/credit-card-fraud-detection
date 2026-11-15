@@ -117,4 +117,6 @@ def main(argv=None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from src.evaluation.cli_utils import run_cli
+
+    raise SystemExit(run_cli(main))
