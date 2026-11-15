@@ -17,6 +17,7 @@ import pytest
 from src.config import FEATURE_COLUMNS
 from src.evaluation.sources import ROOT_ENV_VAR
 from src.ml.artifacts import file_sha256, save_artifact
+from src.ml.metrics import compute_metrics
 from src.ml.pipelines import make_pipeline
 from src.ml.prediction import predict_transactions
 
@@ -74,16 +75,15 @@ def project(tmp_path, monkeypatch):
             **{name: version(name) for name in ("scikit-learn", "imbalanced-learn", "joblib", "numpy", "scipy")},
         },
         "source_paths": {"validation_scores": f"reports/experiments/cache/{run_id}/validation.parquet"},
-        "validation_metrics": {"average_precision": 0.5, "pr_auc": 0.5, "precision": 0.5, "recall": 0.5},
     }
-    model_path = tmp_path / "models" / "fraud_pipeline.joblib"
-    metadata = save_artifact(pipeline, metadata, model_path)
-    write_lock(tmp_path, metadata)
-
     # Кэш validation: 4 строки, по одной на каждый исход TP/TN/FN/FP.
     X_val = feature_frame([4.0, -4.0, -4.0, 4.0], index=[201, 202, 203, 204])
     y_val = np.array([1, 0, 1, 0])
     predicted = predict_transactions(X_val, pipeline, metadata)
+    metadata["validation_metrics"] = compute_metrics(y_val, predicted["score"].to_numpy(), 0.5)
+    model_path = tmp_path / "models" / "fraud_pipeline.joblib"
+    metadata = save_artifact(pipeline, metadata, model_path)
+    write_lock(tmp_path, metadata)
     cache = tmp_path / metadata["source_paths"]["validation_scores"]
     cache.parent.mkdir(parents=True)
     pd.DataFrame({"transaction_id": X_val.index, "split": "validation", "y_true": y_val,
@@ -93,7 +93,8 @@ def project(tmp_path, monkeypatch):
     pd.DataFrame([
         {"run_id": run_id, "model_name": "logistic_regression", "imbalance_strategy": "none", "tuning": "fixed",
          "status": "ok", "threshold": 0.5, "precision": 0.5, "recall": 0.5, "pr_auc": 0.5,
-         "average_precision": 0.5, "fit_seconds": 0.1, "peak_memory_mb": 1.0, "model_size_bytes": 10},
+         "average_precision": 0.5, "fit_seconds": 0.1, "peak_memory_mb": 1.0, "model_size_bytes": 10,
+         "tn": 1, "fp": 1, "fn": 1, "tp": 1},
         {"run_id": "synthetic_dummy", "model_name": "dummy", "imbalance_strategy": "none", "tuning": "fixed",
          "status": "no_feasible_threshold", "threshold": None, "precision": None, "recall": None, "pr_auc": 0.5,
          "average_precision": 0.5, "fit_seconds": 0.1, "peak_memory_mb": 1.0, "model_size_bytes": 10},

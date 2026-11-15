@@ -7,13 +7,19 @@ import streamlit as st
 
 from app.views.common import MODEL_NAMES, STRATEGY_NAMES, fmt, model_label, paths, show_missing
 from src.evaluation import sources
+from src.evaluation.metrics import COUNT_KEYS, add_count_metrics, metrics_from_counts
 
 TABLE_COLUMNS = {
     "model_name": "Модель", "imbalance_strategy": "Балансировка", "tuning": "Настройка", "status": "Статус",
-    "average_precision": "AP", "pr_auc": "PR-AUC", "precision": "Precision", "recall": "Recall",
-    "threshold": "Порог", "fit_seconds": "Обучение, с", "peak_memory_mb": "Пик памяти, МБ",
-    "model_size_bytes": "Размер модели, байт",
+    "average_precision": "AP", "pr_auc": "PR-AUC", "precision": "Precision", "precision_low": "Precision 95% от",
+    "precision_high": "Precision 95% до", "recall": "Recall", "recall_low": "Recall 95% от",
+    "recall_high": "Recall 95% до", "f1": "F1", "threshold": "Порог", "fit_seconds": "Обучение, с",
+    "peak_memory_mb": "Пик памяти, МБ", "model_size_bytes": "Размер модели, байт",
 }
+
+
+def interval(ci) -> str:
+    return "—" if not ci else f"95% ДИ {ci[0]:.3f}–{ci[1]:.3f}"
 
 
 def show_selected(project) -> None:
@@ -25,11 +31,17 @@ def show_selected(project) -> None:
     data = metadata.data
     metrics = data.get("validation_metrics", {})
     st.write(model_label(data.get("model_name", ""), data.get("imbalance_strategy", "")) + f" · `{data.get('run_id')}`")
-    columns = st.columns(4)
-    for column, key, label in zip(columns, ["average_precision", "pr_auc", "precision", "recall"],
-                                  ["AP", "PR-AUC", "Precision", "Recall"]):
-        column.metric(label, fmt(metrics.get(key)))
+    derived = {}
+    if all(isinstance(metrics.get(k), int) for k in COUNT_KEYS):
+        derived = metrics_from_counts(*(metrics[k] for k in COUNT_KEYS))
+    columns = st.columns(5)
+    columns[0].metric("AP", fmt(metrics.get("average_precision")))
+    columns[1].metric("PR-AUC", fmt(metrics.get("pr_auc")))
+    columns[2].metric("Precision", fmt(metrics.get("precision")), interval(derived.get("precision_ci")), delta_color="off")
+    columns[3].metric("Recall", fmt(metrics.get("recall")), interval(derived.get("recall_ci")), delta_color="off")
+    columns[4].metric("F1", fmt(derived.get("f1")))
     st.caption(f"Validation. Порог {data.get('threshold')} выбран Диасом при precision ≥ {data.get('min_precision')}. "
+               "Интервалы Уилсона показывают неопределённость из-за малого числа fraud. "
                "Итоговая оценка test — отдельный этап.")
 
 
@@ -39,7 +51,7 @@ def show_table(project) -> None:
     if not comparison.available:
         show_missing(comparison, "warning")
         return
-    frame = comparison.data
+    frame = add_count_metrics(comparison.data)
     models = st.multiselect("Модели", sorted(frame["model_name"].unique()), format_func=lambda v: MODEL_NAMES.get(v, v),
                             key="cmp_models")
     if models:
@@ -51,7 +63,8 @@ def show_table(project) -> None:
     st.dataframe(shown.rename(columns=TABLE_COLUMNS), hide_index=True)
     infeasible = int((frame["status"] != "ok").sum())
     st.caption(f"Запусков: {len(frame)}. Без допустимого порога: {infeasible} — у них пороговые метрики пусты, "
-               "а не равны нулю. PR-AUC — трапеции, AP — average precision (вычисляются отдельно).")
+               "а не равны нулю. PR-AUC — трапеции, AP — average precision. F1 и интервалы посчитаны "
+               "из сохранённых TP/FP/FN/TN каждого запуска.")
     if {"fit_seconds", "peak_memory_mb"} <= set(frame.columns):
         st.markdown("**Время и память**")
         chart = frame.assign(label=frame["run_id"]).set_index("label")[["fit_seconds"]]
