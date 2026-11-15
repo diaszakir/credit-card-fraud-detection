@@ -96,7 +96,11 @@
     },
     "14": {
       "name": "Замороженный пайплайн и метаданные",
-      "status": "pending"
+      "status": "complete",
+      "note": "Заморожены models/fraud_pipeline.joblib, схема/порог в соседнем JSON и models/selection_lock.json. Пайплайн скопирован из выбранного train-запуска без refit; test не оценивался.",
+      "checks": [
+        "Freeze validates artifact/cache provenance including processed SHA; canonical validation score/ID/label digests saved"
+      ]
     },
     "15": {
       "name": "Проверка загрузки и предсказания",
@@ -107,5 +111,5 @@
       "status": "pending"
     }
   },
-  "updated_at": "2026-11-15T08:58:46.436303+00:00"
+  "updated_at": "2026-11-15T08:59:11.496573+00:00"
 }
