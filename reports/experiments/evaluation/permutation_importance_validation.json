@@ -1,0 +1,13 @@
+{
+  "run_id": "random_forest_class_weight_cv_9db7932bff3b",
+  "split": "validation",
+  "provenance": "real",
+  "scoring": "average_precision",
+  "baseline_average_precision": 0.8721612606940565,
+  "n_repeats": 5,
+  "seed": 42,
+  "n_rows": 42560,
+  "n_fraud": 55,
+  "seconds": 31.64,
+  "created_at": "2026-11-15T21:45:48.421184+00:00"
+}
