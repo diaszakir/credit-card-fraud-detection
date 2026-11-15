@@ -56,7 +56,10 @@ def show_sql(project) -> None:
         if not row.empty:
             info = row.iloc[0]
             st.markdown(f"**{info.get('title', name)}** — {info.get('question', '')}")
-            st.caption(f"Конструкции: {info.get('uses', '')}. Данные: {info.get('scope', '')}.")
+            constructs = info.get("detected_constructs") or info.get("declared_constructs") or ""
+            if not isinstance(constructs, str):
+                constructs = ", ".join(map(str, constructs))
+            st.caption(f"Конструкции SQL: {constructs or 'не указаны'}. Данные: {info.get('scope', '')}.")
     live = project.sqlite.is_file() and st.toggle("Выполнить на fraud.db", key="sql_live",
                                                    help="Без переключателя показывается сохранённый CSV.")
     result = sources.run_live_query(project, name) if live else sources.load_sql_result(project, name)
