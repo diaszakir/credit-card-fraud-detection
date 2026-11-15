@@ -112,12 +112,12 @@
     },
     "16": {
       "name": "Передача Адаму и итоговые проверки ML",
-      "status": "in_progress",
-      "note": "SQLite импорт проверен. Следующее действие: чистый локальный clone текущего HEAD, optimize/split/data_checks/reproduce/handoff verify и финальный pytest. Затем последний коммит и только после него личный MD.",
+      "status": "complete",
+      "note": "ML передача завершена: команды и интерфейс документированы, реальные validation результаты импортированы в SQLite, выбранный pipeline восстановлен из исходных данных в чистом клоне с идентичными scores/ID/labels/метриками. Осталось только создать личный MD после последнего коммита; отдельную чужую правку .gitignore не включать.",
       "checks": [
-        "Actual SQLite import: 17 runs, 162 metrics, 680960 validation-only predictions; selected confusion matrix agrees; zero FK violations"
+        "273 passed in 53.35s; pip check passed; git diff --check passed; actual clean-clone reproduction + artifact reload passed; 17 runs/162 metrics/680960 validation predictions in SQLite; no test evaluation; native Windows/macOS not executed"
       ]
     }
   },
-  "updated_at": "2026-11-15T09:00:38.932474+00:00"
+  "updated_at": "2026-11-15T11:42:08.973403+00:00"
 }

@@ -1,0 +1,161 @@
+{
+  "checked_at": "2026-11-15T11:40:32.937054+00:00",
+  "source_revision": "4904d2c50dda43b7b9a67127fb538bec7eb8b859",
+  "clone_path": "/home/diaszakir/projects/credit-card-fraud-detection/.venv/clean-clone-check-4904d2c50d-113817",
+  "python": "/tmp/fraud-env-validation/bin/python",
+  "environment": "Clean pinned Linux Python 3.12 environment created and installed separately",
+  "data_acquisition": "Exact raw CSV copied as an offline input; download not repeated in this check",
+  "binary_model_present_before_reproduction": false,
+  "processed_data_present_before_reproduction": false,
+  "commands": [
+    {
+      "command": [
+        "git",
+        "clone",
+        "--no-hardlinks",
+        "/home/diaszakir/projects/credit-card-fraud-detection",
+        "/home/diaszakir/projects/credit-card-fraud-detection/.venv/clean-clone-check-4904d2c50d-113817"
+      ],
+      "exit_code": 0,
+      "seconds": 1.0517422939992684,
+      "stdout_tail": "",
+      "stderr_tail": "Cloning into '/home/diaszakir/projects/credit-card-fraud-detection/.venv/clean-clone-check-4904d2c50d-113817'...\ndone.\n"
+    },
+    {
+      "command": [
+        "/tmp/fraud-env-validation/bin/python",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.211218001000816,
+      "stdout_tail": "No broken requirements found.\n",
+      "stderr_tail": "WARNING: The directory '/home/diaszakir/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.\n"
+    },
+    {
+      "command": [
+        "/tmp/fraud-env-validation/bin/python",
+        "-m",
+        "src.data.cli",
+        "optimize"
+      ],
+      "exit_code": 0,
+      "seconds": 7.979326743999991,
+      "stdout_tail": "Exact duplicates removed + compact dtypes: 283,726 unique rows saved as interim Parquet.\n",
+      "stderr_tail": "removed 1081 duplicate rows; kept 283726 transactions\nwrote /home/diaszakir/projects/credit-card-fraud-detection/.venv/clean-clone-check-4904d2c50d-113817/data/interim/creditcard_optimized.parquet (44.6 MiB)\n"
+    },
+    {
+      "command": [
+        "/tmp/fraud-env-validation/bin/python",
+        "-m",
+        "src.data.cli",
+        "split"
+      ],
+      "exit_code": 0,
+      "seconds": 2.6976139140024316,
+      "stdout_tail": "              n_rows  n_fraud  fraud_rate_percent  time_min  time_max\ntrain       198609.0    366.0              0.1843       0.0  132906.0\nvalidation   42560.0     55.0              0.1292  132907.0  151320.0\ntest         42557.0     52.0              0.1222  151321.0  172792.0\n",
+      "stderr_tail": "wrote /home/diaszakir/projects/credit-card-fraud-detection/.venv/clean-clone-check-4904d2c50d-113817/data/processed/transactions.parquet (44.6 MiB)\nwrote /home/diaszakir/projects/credit-card-fraud-detection/.venv/clean-clone-check-4904d2c50d-113817/data/processed/split_manifest.parquet (1.2 MiB)\nwrote /home/diaszakir/projects/credit-card-fraud-detection/.venv/clean-clone-check-4904d2c50d-113817/reports/split_summary.json\n"
+    },
+    {
+      "command": [
+        "/tmp/fraud-env-validation/bin/python",
+        "-m",
+        "src.ml.data_checks",
+        "--review-recurring"
+      ],
+      "exit_code": 0,
+      "seconds": 5.17467182800101,
+      "stdout_tail": "Data checks: ok_with_recurring_features; report: /home/diaszakir/projects/credit-card-fraud-detection/.venv/clean-clone-check-4904d2c50d-113817/reports/experiments/data_checks.json\n",
+      "stderr_tail": ""
+    },
+    {
+      "command": [
+        "/tmp/fraud-env-validation/bin/python",
+        "-m",
+        "src.ml.reproduce"
+      ],
+      "exit_code": 0,
+      "seconds": 108.14735232800012,
+      "stdout_tail": "{\n  \"status\": \"reproduced\",\n  \"run_id\": \"random_forest_class_weight_cv_9db7932bff3b\",\n  \"fit_performed\": true,\n  \"fitted_splits\": [\n    \"train\"\n  ],\n  \"evaluated_splits\": [\n    \"validation\"\n  ],\n  \"cv_performed\": false,\n  \"threshold_retuned\": false,\n  \"test_evaluated\": false,\n  \"threshold\": 0.3452106858370786,\n  \"comparison\": \">=\",\n  \"scores_values_match\": true,\n  \"validation_ids_match\": true,\n  \"validation_labels_match\": true,\n  \"validation_metrics_match\": true,\n  \"validation_rows\": 42560,\n  \"validation_metrics\": {\n    \"pr_auc\": 0.8720854421990842,\n    \"average_precision\": 0.8721612606940565,\n    \"precision\": 0.9183673469387755,\n    \"recall\": 0.8181818181818182,\n    \"accuracy\": 0.999671052631579,\n    \"tn\": 42501,\n    \"fp\": 4,\n    \"fn\": 10,\n    \"tp\": 45,\n    \"precision_constraint_met\": true\n  },\n  \"original_artifact_sha256\": \"69796eae8d606e7f34b29094f8f8329bb2bd32bce7f5d406cd5b84cf2d038dd0\",\n  \"artifact_sha256\": \"266656474f9cf648e1c91797bd20013b68324b85e6d92c5bac2fe36158fc420d\",\n  \"artifact_binary_identical\": false,\n  \"reproduced_at\": \"2026-11-15T11:40:26.897846+00:00\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "command": [
+        "/tmp/fraud-env-validation/bin/python",
+        "-m",
+        "src.ml.handoff",
+        "verify"
+      ],
+      "exit_code": 0,
+      "seconds": 4.983836845000042,
+      "stdout_tail": "{'selected_run_id': 'random_forest_class_weight_cv_9db7932bff3b', 'artifact_sha256': '266656474f9cf648e1c91797bd20013b68324b85e6d92c5bac2fe36158fc420d', 'validation_rows_checked': 42560, 'scores_identical_after_reload': True, 'classes_identical_after_reload': True, 'metrics_identical_after_reload': True, 'invalid_schema_rejected': True, 'schema_error': \"invalid input columns: missing=['V1'], extra=[]\", 'synthetic_example_checked': True, 'threshold': 0.3452106858370786, 'comparison': '>=', 'test_evaluated': False, 'validation_metrics': {'pr_auc': 0.8720854421990842, 'average_precision': 0.8721612606940565, 'precision': 0.9183673469387755, 'recall': 0.8181818181818182, 'accuracy': 0.999671052631579, 'tn': 42501, 'fp': 4, 'fn': 10, 'tp': 45, 'precision_constraint_met': True}}\n",
+      "stderr_tail": ""
+    }
+  ],
+  "reproduction": {
+    "status": "reproduced",
+    "run_id": "random_forest_class_weight_cv_9db7932bff3b",
+    "fit_performed": true,
+    "fitted_splits": [
+      "train"
+    ],
+    "evaluated_splits": [
+      "validation"
+    ],
+    "cv_performed": false,
+    "threshold_retuned": false,
+    "test_evaluated": false,
+    "threshold": 0.3452106858370786,
+    "comparison": ">=",
+    "scores_values_match": true,
+    "validation_ids_match": true,
+    "validation_labels_match": true,
+    "validation_metrics_match": true,
+    "validation_rows": 42560,
+    "validation_metrics": {
+      "pr_auc": 0.8720854421990842,
+      "average_precision": 0.8721612606940565,
+      "precision": 0.9183673469387755,
+      "recall": 0.8181818181818182,
+      "accuracy": 0.999671052631579,
+      "tn": 42501,
+      "fp": 4,
+      "fn": 10,
+      "tp": 45,
+      "precision_constraint_met": true
+    },
+    "original_artifact_sha256": "69796eae8d606e7f34b29094f8f8329bb2bd32bce7f5d406cd5b84cf2d038dd0",
+    "artifact_sha256": "266656474f9cf648e1c91797bd20013b68324b85e6d92c5bac2fe36158fc420d",
+    "artifact_binary_identical": false,
+    "reproduced_at": "2026-11-15T11:40:26.897846+00:00"
+  },
+  "verification": {
+    "selected_run_id": "random_forest_class_weight_cv_9db7932bff3b",
+    "artifact_sha256": "266656474f9cf648e1c91797bd20013b68324b85e6d92c5bac2fe36158fc420d",
+    "validation_rows_checked": 42560,
+    "scores_identical_after_reload": true,
+    "classes_identical_after_reload": true,
+    "metrics_identical_after_reload": true,
+    "invalid_schema_rejected": true,
+    "schema_error": "invalid input columns: missing=['V1'], extra=[]",
+    "synthetic_example_checked": true,
+    "threshold": 0.3452106858370786,
+    "comparison": ">=",
+    "test_evaluated": false,
+    "validation_metrics": {
+      "pr_auc": 0.8720854421990842,
+      "average_precision": 0.8721612606940565,
+      "precision": 0.9183673469387755,
+      "recall": 0.8181818181818182,
+      "accuracy": 0.999671052631579,
+      "tn": 42501,
+      "fp": 4,
+      "fn": 10,
+      "tp": 45,
+      "precision_constraint_met": true
+    }
+  },
+  "test_evaluated": false,
+  "native_windows_macos_tested": false
+}

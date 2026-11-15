@@ -1,0 +1,41 @@
+{
+  "checked_at": "2026-11-15T11:40:44.751479+00:00",
+  "python_version": "3.12.16",
+  "library_versions": {
+    "python": "3.12.16",
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "imbalanced-learn": "0.14.2",
+    "joblib": "1.6.0",
+    "pyarrow": "26.0.1"
+  },
+  "full_suite": {
+    "command": "./.venv/bin/python -m pytest -q",
+    "exit_code": 0,
+    "passed": 273,
+    "seconds": 53.35,
+    "output": "........................................................................ [ 26%]\n........................................................................ [ 52%]\n........................................................................ [ 79%]\n.........................................................                [100%]\n273 passed in 53.35s"
+  },
+  "pip_check": {
+    "exit_code": 0,
+    "output": "No broken requirements found."
+  },
+  "git_diff_check": "passed",
+  "actual_run_count": 17,
+  "temporal_cv_runs": 8,
+  "source_hash_matches_frozen_recipe": true,
+  "frozen_model_and_metadata_match_selection_lock": true,
+  "clean_clone_reproduction": "passed; see clean_clone_verification.json",
+  "validation_reload_check": "42560 scores, classes and metrics identical",
+  "sqlite_import": "17 runs, 162 metrics, 680960 validation predictions; zero FK violations",
+  "native_windows_macos_tested": false,
+  "windows_package_resolution": "Checked earlier; native Windows execution unavailable",
+  "pre_existing_uncommitted_change_preserved": [
+    ".gitignore"
+  ],
+  "push_performed": false,
+  "test_performance_evaluated": false,
+  "private_report_policy": "Create last in the repository root; leave uncommitted and do not ignore."
+}
