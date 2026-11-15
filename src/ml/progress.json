@@ -112,8 +112,12 @@
     },
     "16": {
       "name": "Передача Адаму и итоговые проверки ML",
-      "status": "pending"
+      "status": "in_progress",
+      "note": "SQLite импорт проверен. Следующее действие: чистый локальный clone текущего HEAD, optimize/split/data_checks/reproduce/handoff verify и финальный pytest. Затем последний коммит и только после него личный MD.",
+      "checks": [
+        "Actual SQLite import: 17 runs, 162 metrics, 680960 validation-only predictions; selected confusion matrix agrees; zero FK violations"
+      ]
     }
   },
-  "updated_at": "2026-11-15T08:59:45.047842+00:00"
+  "updated_at": "2026-11-15T09:00:38.932474+00:00"
 }

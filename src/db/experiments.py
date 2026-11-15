@@ -1,6 +1,6 @@
-"""Load experiment results written by the ML / Evaluation modules into SQLite.  (PROPOSAL)
+"""Load experiment results written by the ML / Evaluation modules into SQLite.
 
-Input files in ``reports/experiments/`` (format to be confirmed by Dias and Adam, see
+Input files in ``reports/experiments/`` (implemented ML interface, see
 docs/CONTRACTS.md section 6):
 
     runs.parquet         run_id, model_name, imbalance_strategy, params_json, fit_seconds,
@@ -17,7 +17,7 @@ import logging
 from pathlib import Path
 
 import pandas as pd
-from sqlalchemy import Engine, text
+from sqlalchemy import Engine, bindparam, text
 
 from src.config import EXPERIMENTS_DIR, SPLIT_NAMES
 from src.db.builder import SQL_DIR
@@ -97,7 +97,20 @@ def load_experiments(engine: Engine, experiments_dir: Path = EXPERIMENTS_DIR) ->
 
         if "predictions" in frames:
             predictions = frames["predictions"]
-            labels = pd.read_sql_query(text("SELECT transaction_id, class_id FROM transactions"), connection)
+            # Read labels only for the supplied predictions; keep unrelated test rows closed.
+            transaction_ids = predictions["transaction_id"].dropna().drop_duplicates().tolist()
+            label_query = text(
+                "SELECT transaction_id, class_id FROM transactions WHERE transaction_id IN :ids"
+            ).bindparams(bindparam("ids", expanding=True))
+            label_frames = []
+            for start in range(0, len(transaction_ids), 500):
+                label_frames.append(pd.read_sql_query(
+                    label_query, connection, params={"ids": transaction_ids[start:start + 500]},
+                ))
+            if label_frames:
+                labels = pd.concat(label_frames, ignore_index=True)
+            else:
+                labels = predictions[["transaction_id"]].iloc[:0].assign(class_id=pd.Series(dtype="int64"))
             merged = predictions.merge(labels, on="transaction_id", how="left")
             if merged["class_id"].isna().any():
                 raise ValueError("predictions.parquet references transaction_ids that are not in the database")

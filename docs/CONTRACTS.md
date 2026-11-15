@@ -8,7 +8,10 @@ format or module API is agreed with the team*).
 
 > Approved by the user on 15 November 2026: remove exact raw-row duplicates, then use a
 > chronological 70/15/15 split. Keep the original CSV row identifiers for retained transactions.
-> Other items marked PROPOSAL still need agreement.
+> The user also fixed fraud precision >= 0.85 and authorized autonomous completion of the ML
+> stages with local commits. The working ML protocol is recorded before experiments in
+> `src/ml/experiment_config.json`. The implemented interface below is ready for Adam's review;
+> no external owner sign-off is claimed.
 
 | Area | Owner | Folder |
 |---|---|---|
@@ -42,6 +45,8 @@ tests/data_engineering/  tests of this module (others: tests/ml, tests/evaluatio
 * Source: ULB *Credit Card Fraud Detection* (Kaggle `mlg-ulb/creditcardfraud`), 284 807 rows,
   492 frauds. The raw CSV is not committed (150 MB); `python -m src.data.cli download`
   fetches it and verifies the row and fraud counts.
+* Provider metadata and the downloaded CSV SHA-256 are recorded in
+  `reports/experiments/data_source.json`, including the provider's license designation.
 * **`transaction_id`** = 0-based position of the row in the raw CSV. The file is already ordered
   by `Time` (verified by the audit), so the id also reflects chronological order. The id never
   changes as long as the same file is used; its SHA-256 is stored in `reports/data_audit.json`.
@@ -99,9 +104,22 @@ df = load_transactions(split="train", columns=["transaction_id", "Time", "Class"
 The 70/15/15 proportions are approved. Check fraud counts in the regenerated summary and
 describe the uncertainty of precision/recall when validation or test contains few frauds.
 
-**PROPOSAL (Dias):** cross-validation inside `train` should respect time (for example
-`TimeSeriesSplit` on rows ordered by `transaction_id`) or at least be stratified; your choice, but
-please state it in the report.
+ML v1 uses three expanding-window folds within train. Four equal `Time` intervals define
+train/evaluation windows 1 -> 2, 1+2 -> 3, 1+2+3 -> 4. Equal timestamps stay together;
+each side contains both classes and each training side has enough frauds for SMOTE with k=5.
+The exact ordered ids are hashed in `reports/experiments/data_checks.json`.
+Hyperparameters maximize mean fold AP. Preprocessing and resampling are fitted only on each
+fold's training portion; validation and test retain their natural class balance.
+
+Different-Time legitimate transactions can share all 29 input values. The agreed exact-raw
+deduplication does not remove these distinct operations. The ML audit verifies them against
+the raw CSV; a supplementary novel-validation report excludes inputs already seen in train
+and uses the already selected threshold. Selection always uses the full validation split.
+
+Before test, choose the threshold with maximum validation recall subject to precision >=0.85
+and at least one positive prediction. Ties prefer precision, then the larger threshold.
+Model ties prefer recall, precision, trapezoidal PR-AUC, then fixed model/strategy/run order.
+AP is reported separately. A missing feasible threshold is an explicit unavailable result.
 
 ## 5. SQLite database
 
@@ -130,11 +148,10 @@ engine = get_engine()                      # data/processed/fraud.db
 df = run_query(engine, "q01_split_overview")
 ```
 
-## 6. Experiment results (shared SQLite/Parquet storage) — PROPOSAL
+## 6. Implemented ML experiment and artifact interface
 
-Convention 8 says metrics and results are stored in SQLite/Parquet. So that Adam's *Model
-Comparison / Error Analysis* pages and SQL joins with `transactions` work without conversions,
-Dias and Adam please confirm (or change) these Parquet files in `reports/experiments/`:
+ML exports these Parquet files in `reports/experiments/` for the existing SQLite loader and
+Adam's comparison/error-analysis pages. Per-run JSON files retain the complete provenance.
 
 | File | Columns |
 |---|---|
@@ -142,15 +159,31 @@ Dias and Adam please confirm (or change) these Parquet files in `reports/experim
 | `runs.parquet` | `run_id`, `model_name`, `imbalance_strategy`, `params_json`, `fit_seconds`, `model_size_bytes`, `peak_memory_mb`, `threshold`, `created_at` |
 | `predictions.parquet` | `run_id`, `transaction_id`, `split`, `y_true`, `score`, `y_pred` |
 
-Once the format is agreed, `src/db/experiments.py` (Zhandarbek) loads them into the tables
+`src/db/experiments.py` loads them into the tables
 `model_runs`, `run_metrics`, `predictions` of `fraud.db`, so false positives / false negatives can be
 joined back to `transactions` and `transaction_features` in SQL. The DDL is in
 `src/db/sql/experiments_schema.sql`. Nothing in this repository contains made-up model results:
 the tables stay empty until Dias' real runs exist.
 
-Model artefact (Dias → Adam), **PROPOSAL**: `models/<run_id>.joblib` (the whole Pipeline with its
-preprocessing) and `models/<run_id>.json` (threshold, validation metrics, feature names,
-training split, library versions).
+Missing threshold metrics are not written as zeros or NaN. An infeasible run has a nullable
+threshold and no row-level class predictions in the export. The loader validates labels only
+for ids actually present in prediction files; importing validation results does not read test labels.
+
+Per-run artifacts: `models/runs/<run_id>.joblib` plus JSON. The frozen handoff pair is
+`models/fraud_pipeline.joblib` and `models/fraud_pipeline.json`, with `models/selection_lock.json`.
+The binary and row-level caches stay out of Git and are reproducible from the committed recipe.
+Metadata includes the complete feature schema, positive label, `>=` rule, threshold, min precision,
+versions, seed, parameters, commands, CV, validation metrics and data/code/artifact hashes.
+
+Shared function: `src.ml.prediction.predict_transactions(X, pipeline, metadata)` returns a
+DataFrame with the same row index/order and `score`, `threshold`, `y_pred`. It checks the exact
+29-feature set and finite numeric values, orders/casts inputs to the saved schema, selects the
+fraud score using `classes_ == 1`, and applies the saved `>=` comparison. Load only trusted
+joblib files through `src.ml.artifacts.load_artifact`.
+
+Full commands and the fresh-clone artifact recipe are in `src/ml/README.md`. Final test evaluation
+and Streamlit remain Adam's responsibility: use the frozen pipeline and threshold without
+retraining on train+validation or adjusting the threshold after seeing test results.
 
 ## 7. Change process
 

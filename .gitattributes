@@ -1,0 +1,7 @@
+# Source hashes must remain stable when the repository is checked out on Windows.
+*.py text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.md text eol=lf
+*.parquet binary
+*.png binary
