@@ -71,7 +71,12 @@
     },
     "11": {
       "name": "Эксперименты undersampling",
-      "status": "pending"
+      "status": "complete",
+      "note": "Undersampling отдельно: LR precision=0.9 recall=0.4909090909090909; RF precision=0.8958333333333334 recall=0.7818181818181819, fit4.50s. Все9fixedruns готовы, validation сохранил42560строк.",
+      "checks": [
+        "Full repository suite: 264 passed in43.33s",
+        "8 feasible learned runs; Dummy no_feasible_threshold; no test performance evaluation"
+      ]
     },
     "12": {
       "name": "Подбор гиперпараметров внутри train",
@@ -94,5 +99,5 @@
       "status": "pending"
     }
   },
-  "updated_at": "2026-11-15T07:43:56.571761+00:00"
+  "updated_at": "2026-11-15T07:47:55.220090+00:00"
 }
