@@ -6,8 +6,8 @@ import pandas as pd
 import streamlit as st
 
 from app.views.common import MODEL_NAMES, STRATEGY_NAMES, fmt, model_label, paths, show_missing
-from src.evaluation import sources
-from src.evaluation.metrics import COUNT_KEYS, add_count_metrics, metrics_from_counts
+from src.evaluation import curves, plots, sources
+from src.evaluation.metrics import COUNT_KEYS, add_count_metrics, evaluate_predictions_table, metrics_from_counts
 
 TABLE_COLUMNS = {
     "model_name": "Модель", "imbalance_strategy": "Балансировка", "tuning": "Настройка", "status": "Статус",
@@ -65,15 +65,63 @@ def show_table(project) -> None:
     st.caption(f"Запусков: {len(frame)}. Без допустимого порога: {infeasible} — у них пороговые метрики пусты, "
                "а не равны нулю. PR-AUC — трапеции, AP — average precision. F1 и интервалы посчитаны "
                "из сохранённых TP/FP/FN/TN каждого запуска.")
-    if {"fit_seconds", "peak_memory_mb"} <= set(frame.columns):
-        st.markdown("**Время и память**")
-        chart = frame.assign(label=frame["run_id"]).set_index("label")[["fit_seconds"]]
-        st.bar_chart(pd.DataFrame(chart), horizontal=True, x_label="Время обучения, с")
+    selected = sources.load_model_metadata(project)
+    selected_id = selected.data.get("run_id") if selected.available else None
+    min_precision = selected.data.get("min_precision", 0.85) if selected.available else 0.85
+    points_tab, ap_tab, cost_tab = st.tabs(["Рабочие точки", "Average precision", "Время и память"])
+    with points_tab:
+        points = curves.run_operating_points(comparison.data)
+        st.plotly_chart(plots.operating_points_figure(points, selected_id, min_precision), key="fig_points")
+        st.caption("Каждая точка — запуск с допустимым порогом; линии — 95% интервалы Уилсона. "
+                   "Пересекающиеся интервалы означают, что на 55 fraud разница между запусками не надёжна.")
+    with ap_tab:
+        st.plotly_chart(plots.ap_figure(comparison.data, selected_id), key="fig_ap")
+    with cost_tab:
+        if {"fit_seconds", "peak_memory_mb"} <= set(frame.columns):
+            chart = frame.assign(label=frame["run_id"]).set_index("label")[["fit_seconds"]]
+            st.bar_chart(pd.DataFrame(chart), horizontal=True, x_label="Время обучения, с")
+
+
+@st.cache_data(show_spinner="Строю кривые…")
+def _curves(path: str, mtime: int, threshold: float, run_id: str):
+    """Кривые по сохранённым прогнозам; кэш сбрасывается при изменении файла."""
+    table = pd.read_parquet(path)
+    if "run_id" in table.columns:
+        table = table[table["run_id"] == run_id]
+    y, score = table["y_true"].to_numpy(), table["score"].to_numpy()
+    return (curves.pr_curve(y, score), curves.threshold_curve(y, score), curves.roc_points(y, score),
+            curves.operating_point(y, score, threshold))
+
+
+def show_curves(project) -> None:
+    st.subheader("Кривые выбранной модели (validation)")
+    metadata = sources.load_model_metadata(project)
+    if not metadata.available:
+        show_missing(metadata, "warning")
+        return
+    predictions = sources.load_validation_predictions(project, metadata.data)
+    if not predictions.available:
+        show_missing(predictions)
+        return
+    data = metadata.data
+    result = evaluate_predictions_table(predictions.data, data, split="validation")
+    pr, thr, roc, point = _curves(str(predictions.path), predictions.path.stat().st_mtime_ns,
+                                  float(data["threshold"]), str(data["run_id"]))
+    pr_tab, thr_tab, roc_tab = st.tabs(["Precision–Recall", "Precision/Recall от порога", "ROC"])
+    with pr_tab:
+        st.plotly_chart(plots.pr_figure(pr, point, data["min_precision"], result["prevalence"],
+                                        result["average_precision"]), key="fig_pr")
+    with thr_tab:
+        st.plotly_chart(plots.threshold_figure(thr, data["threshold"], data["min_precision"]), key="fig_thr")
+        st.caption("Порог не подбирается заново: вертикальная линия — порог, выбранный Диасом на validation.")
+    with roc_tab:
+        st.plotly_chart(plots.roc_figure(roc, point, result["roc_auc"]), key="fig_roc")
+        st.caption("При доле fraud 0.13% ROC-кривая выглядит оптимистично; для сравнения используется PR и AP.")
 
 
 def render() -> None:
     st.header("Model Comparison")
     project = paths()
     show_selected(project)
+    show_curves(project)
     show_table(project)
-    st.info("PR-кривые, графики precision/recall от порога и сравнение по кривым появятся на этапе 3.")
