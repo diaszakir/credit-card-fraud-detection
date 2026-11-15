@@ -20,7 +20,13 @@
     },
     "5": {
       "name": "Схема данных, разбиение и временные CV-фолды",
-      "status": "pending"
+      "status": "complete",
+      "note": "Схема, SHA-256, manifest и 3 временных фолда проверены; test rows не читались. Повторные29features разныхTime сохранены по temporal-протоколу; обязательна дополнительная novel-validation диагностика.",
+      "checks": [
+        "24 synthetic data-check tests passed",
+        "Real data check: ok_with_recurring_features; folds fraud train/eval 88/134, 222/90, 312/54",
+        "505 recurring legitimate patterns; raw float64 matches, no label conflicts, no rounding-only matches"
+      ]
     },
     "6": {
       "name": "Baseline DummyClassifier",
@@ -67,5 +73,5 @@
       "status": "pending"
     }
   },
-  "updated_at": "2026-11-15T07:14:05.987471+00:00"
+  "updated_at": "2026-11-15T07:21:23.835172+00:00"
 }
