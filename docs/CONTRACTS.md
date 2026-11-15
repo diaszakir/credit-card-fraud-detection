@@ -181,9 +181,12 @@ DataFrame with the same row index/order and `score`, `threshold`, `y_pred`. It c
 fraud score using `classes_ == 1`, and applies the saved `>=` comparison. Load only trusted
 joblib files through `src.ml.artifacts.load_artifact`.
 
-Full commands and the fresh-clone artifact recipe are in the root `README.md`. Final test evaluation
-and Streamlit remain Adam's responsibility: use the frozen pipeline and threshold without
-retraining on train+validation or adjusting the threshold after seeing test results.
+Full commands and the fresh-clone artifact recipe are in the root `README.md`. A minimal Streamlit
+demo in `app/streamlit_app.py` displays saved validation results and uses the shared prediction API;
+Docker Compose prepares the frozen recipe once and persists data, models and reports in named volumes.
+Final test evaluation and further application integration remain Adam's responsibility: use the
+frozen pipeline and threshold without retraining on train+validation or adjusting the threshold
+after seeing test results.
 
 ## 7. Change process
 
