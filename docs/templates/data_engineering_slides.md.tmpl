@@ -8,12 +8,12 @@ Merge into the common deck (.pptx or .pdf); the other members add their own slid
 
 ## Slide 1. Data and audit
 
-- ${n_rows} transactions, ${n_columns} columns; ${n_fraud} frauds = ${fraud_rate} % (about ${imbalance_ratio} : 1)
-- ${missing_sentence}; ${n_repeated} rows repeat an earlier row (kept, ids stay stable)
-- Rows already ordered by `Time` → row position = stable `transaction_id`
+- Raw file: ${n_rows} transactions, ${n_columns} columns; ${n_fraud} frauds = ${fraud_rate} % (about ${imbalance_ratio} : 1)
+- ${missing_sentence}; remove ${n_repeated} exact raw-row copies before dtype conversion and splitting
+- Keep the first occurrence and its original CSV `transaction_id`; removed copies leave gaps
 - Figure: `reports/figures/eda_01_class_balance.png`
 
-*Notes:* accuracy is useless at this imbalance, hence PR-AUC, recall at fixed precision and threshold tuning. ${time_token_sentence}
+*Notes:* deduplication and chronological 70/15/15 were approved by the user on 15 November 2026. Rows remain ordered by `Time`. Accuracy is useless at this imbalance, hence PR-AUC, recall at fixed precision and threshold tuning. ${time_token_sentence}
 
 ## Slide 2. Memory and Parquet
 
@@ -22,16 +22,16 @@ Merge into the common deck (.pptx or .pdf); the other members add their own slid
 - CSV ${csv_mib} MiB → Parquet ${parquet_mib} MiB (${parquet_saved_pct} % smaller)
 - 3-column projection from Parquet: ${speedup_projection}x the baseline speed
 
-*Notes:* the benchmark runs each variant in its own process; load times are close because pandas' CSV parser is fast, the gains are size, memory and projection. Table: `reports/benchmarks.json`.
+*Notes:* preparation reads the full raw CSV and removes exact copies before `float32` conversion. The benchmark separately compares loading the original rows, including a chunked CSV alternative, with each variant in its own process. Table: `reports/benchmarks.json`.
 
 ## Slide 3. Chronological split without leakage
 
-- Train / validation / test = 70 / 15 / 15 % of rows in time order; cuts never separate rows with the same `Time`
+- After deduplication: train / validation / test target 70 / 15 / 15 % of retained rows in time order; cuts never separate rows with the same `Time`
 - Frauds: ${train_fraud} / ${val_fraud} / ${test_fraud}; fraud rate ${train_rate} % / ${val_rate} % / ${test_rate} %
 - Preprocessing and resampling fit on train only; threshold on validation only; test once
 - Figure: `reports/figures/eda_07_split_drift.png`
 
-*Notes:* few frauds in validation and test → noisy precision/recall; the committed `split_manifest.parquet` is the shared source of truth.
+*Notes:* few frauds in validation and test → noisy precision/recall; rebuild `split_manifest.parquet` and `split_summary.json` after deduplication. Equal-time groups can shift actual percentages slightly. Use the regenerated manifest for all models.
 
 ## Slide 4. EDA
 
@@ -64,7 +64,7 @@ ${sql_findings}
 - ${n_crosschecks} SQL queries recomputed independently in Pandas and compared; the pipeline stops on a mismatch
 - One command: `python -m src.data.cli run-all`; console menu: `python -m src.data.cli`
 
-*Notes:* SQL's value here is integrity and joins with model predictions, not speed.
+*Notes:* SQL duplicate counts refer to processed values, while the audit counts original copies before removal; compare SQL with Pandas on the same processed dataset. SQL also provides integrity and joins with model predictions.
 
 ## Contribution (for the contribution slide)
 

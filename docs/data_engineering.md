@@ -7,12 +7,26 @@ the generated report text is in [report_data_engineering.md](report_data_enginee
 
 ## Quick start
 
+Run from the repository root. On macOS and Linux:
+
 ```bash
-python3.12 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements-data.txt
-python -m src.data.cli run-all        # download -> audit -> Parquet -> split -> EDA -> SQLite -> SQL -> benchmarks -> report
-python -m src.data.cli                # or: the interactive console menu
-python -m pytest tests/data_engineering
+python3.12 -m venv .venv
+./.venv/bin/python -m pip install -r requirements.txt
+./.venv/bin/python -m pip check
+./.venv/bin/python -m src.data.cli run-all
+./.venv/bin/python -m src.data.cli
+./.venv/bin/python -m pytest tests/data_engineering
+```
+
+On Windows PowerShell:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe -m src.data.cli run-all
+.\.venv\Scripts\python.exe -m src.data.cli
+.\.venv\Scripts\python.exe -m pytest tests/data_engineering
 ```
 
 `run-all` downloads `creditcard.csv` (150 MB, a public mirror of the Kaggle file, verified by row and fraud count).
@@ -20,14 +34,18 @@ If the download is blocked, put the file from <https://www.kaggle.com/datasets/m
 Nothing large is committed: `data/raw`, `data/interim` and the Parquet/SQLite files in `data/processed` are rebuilt by the command above
 (only the tiny `split_manifest.parquet` is in git).
 
+The user approved deduplication and the chronological 70/15/15 split on 15 November 2026.
+Rebuild the interim file, split manifest, SQLite, EDA and saved reports after this change;
+previously saved results describe the earlier dataset with duplicates.
+
 ## Commands
 
 | Command | What it does | Main output |
 |---|---|---|
 | `download` | fetch and verify the CSV | `data/raw/creditcard.csv` |
 | `audit` | data-quality audit + memory before/after | `reports/data_audit.json` |
-| `optimize` | chunked load with compact dtypes → Parquet | `data/interim/creditcard_optimized.parquet` |
-| `split` | add `transaction_id`, chronological `split`, validate | `data/processed/transactions.parquet`, `split_manifest.parquet`, `reports/split_summary.json` |
+| `optimize` | read the raw CSV, assign original row ids, remove exact copies, then cast dtypes → Parquet | `data/interim/creditcard_optimized.parquet` |
+| `split` | preserve original `transaction_id`, add chronological `split` to retained rows, validate | `data/processed/transactions.parquet`, `split_manifest.parquet`, `reports/split_summary.json` |
 | `eda` | tables and figures | `reports/eda/`, `reports/figures/` |
 | `build-db` | build and verify SQLite | `data/processed/fraud.db` |
 | `er-diagram` | draw the ER diagram from the database | `docs/er_diagram.png`, `docs/er_diagram.md` |
@@ -42,7 +60,7 @@ Nothing large is committed: `data/raw`, `data/interim` and the Parquet/SQLite fi
 |---|---|
 | `src/config.py` | paths, column names, split fractions, amount bands (shared contract) |
 | `src/data/download.py` | `download_dataset`, `verify_dataset`, `sha256_of` |
-| `src/data/loading.py` | `read_raw_csv` (baseline), `iter_csv_chunks`, `load_csv_chunked` |
+| `src/data/loading.py` | `read_raw_csv` (full raw input and benchmark baseline), `iter_csv_chunks`, `load_csv_chunked` (benchmark alternative) |
 | `src/data/memory.py` | `optimize_dtypes` (verified casts), `cast_report`, `compare_memory`, `max_relative_error` |
 | `src/data/audit.py` | `audit_dataframe`, `iqr_outlier_table`, `scan_time_tokens` |
 | `src/data/storage.py` | `save_parquet`, `load_parquet` |
@@ -72,7 +90,7 @@ Nothing large is committed: `data/raw`, `data/interim` and the Parquet/SQLite fi
 | for / while | `run_menu` (`while True`), `download_dataset` (mirrors), `iter_csv_chunks`, `run_all` |
 | File reading and writing | CSV → Parquet → SQLite, JSON reports, CSV query results, Markdown generation |
 | try / except | `download_dataset`, `verify_dataset`, `read_raw_csv`, `run_menu` (`EXPECTED_ERRORS`), `write_json` |
-| Console menu | `python -m src.data.cli` |
+| Console menu | `./.venv/bin/python -m src.data.cli` (PowerShell: `.\.venv\Scripts\python.exe -m src.data.cli`) |
 | Modularity | `src/data` and `src/db` packages, `src/config.py`, standard library (`pathlib`, `json`, `argparse`, `hashlib`, `logging`) |
 | EDA: statistics, missing values, outliers (IQR / boxplot), class balance, correlations | `src/data/audit.py`, `src/data/eda.py`, `reports/eda/`, `reports/figures/` |
 | ≥ 4–5 visualisations, ≥ 1 interactive (Plotly) | 7 static + 2 Plotly figures |
@@ -82,7 +100,7 @@ Nothing large is committed: `data/raw`, `data/interim` and the Parquet/SQLite fi
 | SQLite + ER diagram | `src/db/sql/schema.sql`, `docs/er_diagram.png`, `docs/er_diagram.md` |
 | ≥ 8 SQL queries: JOIN, GROUP BY/HAVING, subquery or CTE, window functions | 13 queries; coverage table in the report, tested in `tests/data_engineering/test_queries.py` |
 | Query results loaded into Pandas | `run_query` → `pandas.read_sql_query`; `reports/sql_results/` |
-| README, `requirements.txt`, GitHub | this file + `requirements-data.txt` (the project-wide `requirements.txt` and root README are consolidated by Adam) |
+| README, `requirements.txt`, GitHub | this file + project-wide `requirements.txt`; the final root README is maintained by Adam |
 | Data volume ≥ 500k rows / 200 MB | topic 32 is on the instructor's list of exceptions; memory work and Parquet are done anyway (the CSV is about 144 MiB) |
 
 ## Using the data from another module
@@ -103,9 +121,11 @@ df = run_query(get_engine(), "q03_hourly_fraud_hotspots", params={"min_transacti
 
 ## Design decisions in one place
 
-- **Chronological split, not random:** the model scores future transactions; a random split would let it see the future and near-duplicates.
+- **Chronological 70/15/15 split:** the model scores future transactions. Fractions are calculated after removing exact raw-row copies.
 - **Cuts never separate equal timestamps:** a row-count cut falls inside a group of rows with the same `Time` in this dataset.
-- **Duplicates kept:** they have their own ids; removing them changes the dataset the whole team agreed on. They are reported by the audit and by SQL `q12`.
+- **Remove exact raw-row copies before dtype conversion:** compare all raw columns and keep the first occurrence. Assign `transaction_id` first, so retained transactions keep their original CSV row ids with gaps. Do not deduplicate rounded `float32` values: distinct source rows may become equal after conversion.
+- **Audit and SQL describe different stages:** the audit reports copies in the raw file. SQL `q12` checks repeated values in the processed data; its result need not equal the raw duplicate count.
+- **Full raw read for preparation:** `optimize` reads the complete raw CSV so duplicate detection uses its original precision. `load_csv_chunked` remains available as a separate loading and benchmark alternative.
 - **`Amount` stays `float64`, V features become `float32`:** money must match exactly in SQL; the V features are PCA scores where a relative error of 6e-8 is irrelevant. Every cast is verified, and the build fails if a cast is unsafe.
 - **Two tables for the transactions:** facts are narrow; the 28 features are a 1:1 table. Dimensions are separate to avoid repeating text.
 - **SQL results are cross-checked in Pandas:** a wrong JOIN or window frame would otherwise look plausible.
@@ -113,7 +133,8 @@ df = run_query(get_engine(), "q03_hourly_fraud_hotspots", params={"min_transacti
 
 ## Troubleshooting
 
-- `FileNotFoundError ... run-all`: the processed data has not been built; run `python -m src.data.cli run-all`.
+- `FileNotFoundError ... run-all`: the processed data has not been built; run `./.venv/bin/python -m src.data.cli run-all` (PowerShell: `.\.venv\Scripts\python.exe -m src.data.cli run-all`).
+- Old files created before deduplication: rerun `run-all` using the environment command above; the previous split manifest and reports must not be used for the new experiments.
 - Download blocked or offline: place `creditcard.csv` manually (see Quick start).
 - Windows: all code is cross-platform except the peak-memory column of the storage benchmark, which needs the `resource` module and shows `n/a` there.
 - Plotly figures load `plotly.js` from a CDN, so they need internet when opened.

@@ -1,9 +1,9 @@
 -- name: q12_duplicate_transactions
--- title: Exact duplicate transactions (all 30 raw columns identical)
+-- title: Repeated processed transactions (all 31 stored data columns identical)
 -- question: How many rows repeat an earlier row, in which classes, and in groups of what size?
 -- uses: CTE, JOIN, GROUP BY, HAVING, second GROUP BY over the CTE
--- scope: all rows; duplicates keep their own transaction_id (see docs/CONTRACTS.md)
--- note: n_extra_rows = rows that repeat an earlier row; it must equal the audit's n_repeated_rows
+-- scope: processed rows; raw duplicates were removed before float32 casts (see docs/CONTRACTS.md)
+-- note: n_extra_rows must match Pandas on the processed data, not the raw audit before deduplication
 WITH duplicate_groups AS (
     SELECT
         t.time_sec, t.amount, t.class_id,

@@ -19,6 +19,7 @@ import pandas as pd
 from src.config import (
     ID_COLUMN,
     PROCESSED_COLUMNS,
+    RAW_COLUMNS,
     SPLIT_COLUMN,
     SPLIT_NAMES,
     SPLIT_TEST,
@@ -47,6 +48,13 @@ def assign_transaction_ids(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     out.insert(0, ID_COLUMN, np.arange(len(out), dtype="int32"))
     return out
+
+
+def remove_duplicate_transactions(raw: pd.DataFrame) -> pd.DataFrame:
+    """Keep the first exact raw row and its original CSV id, before float32 casts."""
+    with_ids = assign_transaction_ids(raw)
+    unique = with_ids.drop_duplicates(subset=RAW_COLUMNS, keep="first")
+    return unique.reset_index(drop=True)
 
 
 def find_cut_positions(
@@ -107,8 +115,11 @@ def add_split_column(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
 
 
 def build_processed_frame(raw_optimized: pd.DataFrame, **kwargs) -> pd.DataFrame:
-    """ids + split on top of the optimised frame, columns in contract order."""
-    framed = add_split_column(assign_transaction_ids(raw_optimized), **kwargs)
+    """Add the split, preserving original ids when supplied by preprocessing."""
+    with_ids = raw_optimized
+    if ID_COLUMN not in with_ids.columns:
+        with_ids = assign_transaction_ids(with_ids)
+    framed = add_split_column(with_ids, **kwargs)
     return framed[PROCESSED_COLUMNS]
 
 
@@ -136,15 +147,21 @@ def split_summary(df: pd.DataFrame) -> dict:
 def validate_split(df: pd.DataFrame) -> dict:
     """Check the split invariants; raise ``ValueError`` listing every violation.
 
-    1. ids are unique and equal to 0..n-1
+    1. ids are non-negative integers in strictly increasing order (gaps are allowed)
     2. every row has one of the allowed split labels
     3. Time ranges are strictly ordered (train < validation < test): no timestamp is shared
     4. every split contains both classes (otherwise PR-AUC / recall are undefined)
     """
     problems: list[str] = []
-    ids = df[ID_COLUMN].to_numpy()
-    if not np.array_equal(ids, np.arange(len(df))):
-        problems.append("transaction_id is not exactly 0..n-1 in row order")
+    ids = df[ID_COLUMN]
+    if (
+        not pd.api.types.is_integer_dtype(ids.dtype)
+        or ids.isna().any()
+        or (ids < 0).any()
+        or ids.duplicated().any()
+        or not ids.is_monotonic_increasing
+    ):
+        problems.append("transaction_id must contain unique, increasing, non-negative integers")
 
     labels = df[SPLIT_COLUMN]
     if labels.isna().any() or not labels.isin(SPLIT_NAMES).all():

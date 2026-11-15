@@ -3,73 +3,73 @@
   "top_features_by_abs_correlation_train": [
     {
       "feature": "V17",
-      "correlation": -0.3839000013477011
+      "correlation": -0.36854770172838225
     },
     {
       "feature": "V14",
-      "correlation": -0.32620351649667295
+      "correlation": -0.3145795239603147
     },
     {
       "feature": "V12",
-      "correlation": -0.2769970734752902
+      "correlation": -0.2654898605061258
     },
     {
       "feature": "V10",
-      "correlation": -0.2558589841010225
+      "correlation": -0.24345534515827275
     },
     {
       "feature": "V3",
-      "correlation": -0.2443681608657881
+      "correlation": -0.23007676998772117
     },
     {
-      "feature": "V7",
-      "correlation": -0.2377994612276556
+      "feature": "V16",
+      "correlation": -0.22221382546660465
     }
   ],
   "v_feature_dependence_train": {
-    "mean_abs_corr": 0.019108924027671514,
-    "max_abs_corr": 0.10494428559198841,
+    "mean_abs_corr": 0.018260526773808117,
+    "max_abs_corr": 0.10334493794878573,
     "n_pairs": 378
   },
   "hour_with_highest_fraud_rate": {
     "hour_index": 26,
-    "fraud_rate_percent": 2.0547945205479454,
-    "n_transactions": 1752,
-    "n_fraud": 36
+    "fraud_rate_percent": 1.5561959654178674,
+    "n_transactions": 1735,
+    "n_fraud": 27
   },
   "hours_with_fewer_than_100_transactions": 0,
   "split_summary": {
     "train": {
-      "n_rows": 199364,
-      "share_of_rows_percent": 69.99968399653099,
-      "n_fraud": 384,
-      "n_legitimate": 198980,
-      "fraud_rate_percent": 0.19261250777472363,
+      "n_rows": 198609,
+      "share_of_rows_percent": 70.00028196217477,
+      "n_fraud": 366,
+      "n_legitimate": 198243,
+      "fraud_rate_percent": 0.1842816790779874,
       "time_min": 0,
-      "time_max": 132928,
+      "time_max": 132906,
       "id_min": 0,
-      "id_max": 199363
+      "id_max": 199324
     },
     "validation": {
-      "n_rows": 42722,
-      "share_of_rows_percent": 15.000333559217294,
-      "n_fraud": 56,
-      "n_legitimate": 42666,
-      "fraud_rate_percent": 0.13108000561771452,
-      "time_min": 132929,
-      "time_max": 151328,
-      "id_min": 199364,
-      "id_max": 242085
+      "n_rows": 42560,
+      "share_of_rows_percent": 15.000387697990314,
+      "n_fraud": 55,
+      "n_legitimate": 42505,
+      "fraud_rate_percent": 0.12922932330827067,
+      "time_min": 132907,
+      "time_max": 151320,
+      "id_min": 199325,
+      "id_max": 242066
     },
     "test": {
-      "n_rows": 42721,
-      "share_of_rows_percent": 14.999982444251721,
+      "n_rows": 42557,
+      "share_of_rows_percent": 14.999330339834911,
       "n_fraud": 52,
-      "n_legitimate": 42669,
-      "fraud_rate_percent": 0.12171999719107698,
-      "time_min": 151329,
+      "n_legitimate": 42505,
+      "fraud_rate_percent": 0.12218906407876495,
+      "time_min": 151321,
       "time_max": 172792,
-      "id_min": 242086,
+      "id_min": 242067,
       "id_max": 284806
     }
   },

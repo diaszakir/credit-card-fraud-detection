@@ -9,7 +9,7 @@
 
 ## 1. Data
 
-The dataset is the ULB *Credit Card Fraud Detection* table: ${n_rows} transactions in ${n_columns} columns
+The raw dataset is the ULB *Credit Card Fraud Detection* table: ${n_rows} transactions in ${n_columns} columns
 (`Time`, `V1`–`V28`, `Amount`, `Class`). `V1`–`V28` are anonymised numerical features, `Time` is the number of seconds since the first
 transaction, `Class` is 1 for fraud. The file spans ${time_span_hours} hours and contains ${n_fraud} frauds, i.e. ${fraud_rate} % of the rows
 (about ${imbalance_ratio} legitimate transactions per fraud), so plain accuracy is not informative and the project uses PR-AUC,
@@ -27,7 +27,7 @@ What the audit means for the project:
 
 - The table ${missing_sentence}, so no imputation is needed.
 - ${n_repeated} rows repeat an earlier row (${dup_fraud} of them fraud, ${dup_legit} legitimate) in ${dup_groups} groups of identical rows.
-  They are **kept**: removing them would change the dataset size and the row-based `transaction_id`; the effect on the models is for the ML module to judge.
+  Following the user's approval on 15 November 2026, exact raw-row copies are removed before dtype conversion and splitting. All raw columns are compared, the first occurrence is retained, and its original CSV `transaction_id` is preserved.
 - The rows are already ordered by `Time`, so the row position is also the chronological rank. Up to ${max_rows_one_timestamp} rows share one timestamp.
 - ${time_token_sentence}
 - By the IQR rule ${amount_outlier_pct} % of `Amount` values are outliers; the columns with the largest outlier share are ${outlier_columns}.
@@ -37,7 +37,10 @@ What the audit means for the project:
 
 The raw CSV is read as 30 `float64` columns and one `int64` column. The dtype policy (`src/data/memory.py`) is explicit and every cast is verified:
 integer-valued columns are cast only if every value is a whole number inside the range of the new type, and `float32` is accepted only if the
-relative error stays below 1e-6. `Amount` is deliberately kept as `float64` so that SQL sums equal the CSV.
+relative error stays below 1e-6. `Amount` stays `float64` so retained transaction amounts match the original CSV.
+Preparation reads the full raw CSV, assigns row identifiers and removes exact copies before converting the V features to `float32`.
+This order prevents small source differences from being mistaken for duplicates after rounding.
+The separate chunked loader remains a benchmark alternative; it does not perform this preparation step.
 
 ${memory_table}
 
@@ -45,7 +48,8 @@ DataFrame memory: **${mem_before} MiB → ${mem_after} MiB (${mem_saved_pct} % s
 
 ### Storage formats: baseline against alternatives
 
-Five loading strategies were compared (`src/data/benchmark.py`). Each one runs in a fresh Python process so that its peak resident memory is its own;
+Five loading strategies for the original raw rows were compared (`src/data/benchmark.py`). These benchmarks measure storage and loading, separately from deduplication.
+Each one runs in a fresh Python process so that its peak resident memory is its own;
 times are the median of ${bench_repeats} runs on this machine (${bench_platform}).
 
 ${storage_table}
@@ -59,9 +63,10 @@ ${file_sizes_table}
 
 ## 4. Chronological split without leakage
 
-Fraud patterns change over time and the model will score future transactions, so the split is chronological and deterministic (no random seed):
-rows are ordered by `Time`; the first 70 % are `train`, the next 15 % `validation`, the last 15 % `test`. A cut is moved forward to the next distinct `Time`, so no
-timestamp is shared between two splits. `transaction_id` is the 0-based row position in the CSV and never changes.
+Fraud patterns change over time and the model will score future transactions, so the split is chronological and deterministic (no random seed).
+After exact raw-row copies are removed, retained rows remain ordered by `Time`; the first 70 % are `train`, the next 15 % `validation`, the last 15 % `test`.
+A cut is moved forward to the next distinct `Time`, so no timestamp is shared between two splits and actual percentages may differ slightly from the target fractions.
+`transaction_id` is the original 0-based row position in the CSV and never changes; removed copies leave gaps in the ids.
 
 ${split_table}
 
@@ -91,9 +96,9 @@ validation or test information into feature choices. Descriptive facts about the
 
 ![Feature correlation with the target](../reports/figures/eda_04_feature_target_correlation.png)
 
-Observations (all numbers are from the files in `reports/eda/`):
+Observations (numbers are from the saved raw audit and processed-data EDA):
 
-- Median `Amount` over all rows is ${amount_median_legit} for legitimate and ${amount_median_fraud} for fraudulent transactions (means ${amount_mean_legit} and ${amount_mean_fraud}; maximum ${amount_max}).
+- In the raw audit, median `Amount` is ${amount_median_legit} for legitimate and ${amount_median_fraud} for fraudulent transactions (means ${amount_mean_legit} and ${amount_mean_fraud}; maximum ${amount_max}).
 - The largest absolute correlations with `Class` in train: ${top_corr_list}.
 - `V1`–`V28` are almost uncorrelated with each other (mean |r| = ${v_mean_abs_corr}, maximum ${v_max_abs_corr}), which is what one expects from principal components.
 - The hour with the highest fraud rate is hour ${peak_hour} since the first transaction: ${peak_rate} % (${peak_fraud} frauds among ${peak_tx} transactions). Hours with little traffic give noisy rates.
@@ -143,10 +148,10 @@ ${pandas_sql_verdict} SQL is not chosen for speed here: it gives declarative que
 
 ## 9. Verification and reproducibility
 
-- **SQL is cross-checked against Pandas.** ${n_crosschecks} queries (${crosscheck_list}) are recomputed independently in Pandas from the Parquet file and compared; the pipeline stops if one differs (`src/db/crosscheck.py`). For example the duplicate count found in SQL equals the count found by the audit on the raw CSV.
+- **SQL is cross-checked against Pandas.** ${n_crosschecks} queries (${crosscheck_list}) are recomputed independently in Pandas from the same processed Parquet file and compared; the pipeline stops if one differs (`src/db/crosscheck.py`). Query `q12` checks repeated processed values, while the raw audit counts source copies before removal; these counts describe different stages and need not match.
 - **Tests:** `python -m pytest tests/data_engineering` (synthetic data for unit tests, plus integration checks on the real dataset when it has been built).
 - **One command rebuilds everything:** `python -m src.data.cli run-all`; the console menu is `python -m src.data.cli`. The split and all statistics are deterministic; the only random choice (a plot sample) uses a fixed seed.
-- **Versions** of the libraries are pinned in `requirements-data.txt`.
+- **Versions** of the libraries are pinned in `requirements.txt`; use Python 3.12 from the project `.venv` as described in `docs/data_engineering.md`.
 
 ## 10. Limitations
 
@@ -155,7 +160,7 @@ ${pandas_sql_verdict} SQL is not chosen for speed here: it gives declarative que
 - The V features are anonymised, so EDA can show *that* features separate the classes but not *why*.
 - The data has no absolute clock time; time-of-day statements are not possible.
 - Benchmarks were measured on one machine (${bench_platform}) in warm-cache conditions; read them as relative comparisons.
-- Duplicate rows and outliers are reported and kept, not removed; the ML module decides how to treat them.
+- Exact raw-row copies are removed with the first occurrence retained. Distinct source values can still become equal after `float32` conversion; SQL duplicate checks describe these processed values. Outliers remain available for the ML pipeline to transform if appropriate.
 
 ## 11. Contribution of the author
 

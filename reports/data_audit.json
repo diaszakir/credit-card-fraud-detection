@@ -112,7 +112,7 @@
   },
   "findings": [
     "No missing values: imputation is not needed.",
-    "1081 rows repeat an earlier row (19 of them fraud); kept, ids stay stable.",
+    "1081 rows repeat an earlier row (19 of them fraud); preprocessing removes copies and preserves original ids.",
     "Rows are already ordered by Time, so row position is a chronological id.",
     "Up to 36 rows share one timestamp: split cuts must not fall between them.",
     "Fraud is 0.1727% of rows (about 578 legitimate per fraud): plain accuracy is meaningless; use PR-AUC / recall at fixed precision.",

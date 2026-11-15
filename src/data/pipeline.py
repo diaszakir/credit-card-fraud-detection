@@ -25,9 +25,9 @@ from src.config import (
 from src.data.audit import audit_dataframe
 from src.data.download import download_dataset
 from src.data.io_utils import write_json
-from src.data.loading import load_csv_chunked, read_raw_csv
+from src.data.loading import read_raw_csv
 from src.data.memory import cast_report, compare_memory, optimize_dtypes
-from src.data.splitting import build_processed_frame, validate_split
+from src.data.splitting import build_processed_frame, remove_duplicate_transactions, validate_split
 from src.data.storage import load_parquet, save_parquet
 
 logger = logging.getLogger(__name__)
@@ -52,8 +52,11 @@ def step_audit(csv_path: Path = RAW_CSV_PATH, out_path: Path = AUDIT_JSON_PATH) 
 
 
 def step_optimize(csv_path: Path = RAW_CSV_PATH, out_path: Path = OPTIMIZED_PARQUET_PATH) -> pd.DataFrame:
-    """Chunked CSV load with compact dtypes, saved as Parquet (interim file)."""
-    df = load_csv_chunked(csv_path)
+    """Remove exact raw duplicates, keep CSV ids, then cast and save interim Parquet."""
+    raw = read_raw_csv(csv_path)
+    unique = remove_duplicate_transactions(raw)
+    df = optimize_dtypes(unique)
+    logger.info("removed %d duplicate rows; kept %d transactions", len(raw) - len(unique), len(unique))
     save_parquet(df, out_path)
     return df
 
@@ -64,11 +67,13 @@ def step_split(
     manifest_path: Path = SPLIT_MANIFEST_PATH,
     summary_path: Path = SPLIT_SUMMARY_JSON_PATH,
 ) -> pd.DataFrame:
-    """Add ``transaction_id`` + chronological ``split``, validate, write the shared files.
+    """Split unique transactions chronologically, preserving their original CSV ids.
 
     Writes: the processed dataset, the tiny split manifest (committed to git) and a JSON summary.
     """
     optimized = load_parquet(interim_path)
+    if ID_COLUMN not in optimized.columns:
+        raise ValueError("interim data uses the old format; run `python -m src.data.cli optimize` first")
     processed = build_processed_frame(optimized)
     summary = validate_split(processed)  # raises ValueError if an invariant is broken
     save_parquet(processed, out_path)

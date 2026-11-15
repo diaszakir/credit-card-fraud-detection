@@ -241,7 +241,9 @@ def _sql_values(audit: dict) -> dict[str, str]:
         f"{int(top_hour['hour_index'])} ({int(top_hour['n_fraud'])} frauds in {_num(top_hour['n_transactions'])} transactions) (`q03`); "
         f"{len(q04)} hours are above the overall rate (`q04`).",
         "Mean gap between consecutive frauds: " + ", ".join(f"{n} {gaps.loc[n, 'avg_gap_sec']:.0f} s" for n in SPLIT_NAMES) + " (`q08`).",
-        f"{_num(q12['n_extra_rows'].sum())} rows repeat an earlier row (`q12`); this equals the {_num(audit['duplicates']['n_repeated_rows'])} found by the Pandas audit on the raw CSV.",
+        f"The raw audit found {_num(audit['duplicates']['n_repeated_rows'])} repeated rows, removed before splitting. "
+        f"The stored compact dataset has {_num(q12['n_extra_rows'].sum())} repeated rows (`q12`); "
+        "this check uses float32 features, so it can also count rounding coincidences between distinct raw rows.",
         "Features with the largest standardised mean difference between fraud and legitimate rows (train): "
         + ", ".join(f"{r.feature} ({r.standardised_difference:+.2f})" for r in q10.head(6).itertuples()) + " (`q10`).",
     ]

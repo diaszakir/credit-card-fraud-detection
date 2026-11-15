@@ -48,7 +48,7 @@ def cmd_audit() -> None:
 
 def cmd_optimize() -> None:
     df = pipeline.step_optimize()
-    print(f"Chunked load + compact dtypes done: {len(df):,} rows saved as interim Parquet.")
+    print(f"Exact duplicates removed + compact dtypes: {len(df):,} unique rows saved as interim Parquet.")
 
 
 def cmd_split() -> None:
@@ -106,8 +106,8 @@ def cmd_run_all() -> None:
 COMMANDS: dict[str, tuple[str, Callable[[], None]]] = {
     "download": ("Download and verify creditcard.csv", cmd_download),
     "audit": ("Data-quality audit + memory before/after", cmd_audit),
-    "optimize": ("Chunked CSV load with compact dtypes -> Parquet", cmd_optimize),
-    "split": ("Add transaction_id and the chronological split", cmd_split),
+    "optimize": ("Remove exact duplicates, preserve ids, compact dtypes -> Parquet", cmd_optimize),
+    "split": ("Split unique transactions chronologically (70/15/15)", cmd_split),
     "eda": ("Exploratory analysis: tables and figures", cmd_eda),
     "build-db": ("Build and verify the SQLite database", cmd_build_db),
     "er-diagram": ("Draw the ER diagram from the database", cmd_er_diagram),

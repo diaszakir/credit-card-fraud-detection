@@ -9,7 +9,7 @@
 
 ## 1. Data
 
-The dataset is the ULB *Credit Card Fraud Detection* table: 284,807 transactions in 31 columns
+The raw dataset is the ULB *Credit Card Fraud Detection* table: 284,807 transactions in 31 columns
 (`Time`, `V1`–`V28`, `Amount`, `Class`). `V1`–`V28` are anonymised numerical features, `Time` is the number of seconds since the first
 transaction, `Class` is 1 for fraud. The file spans 48.0 hours and contains 492 frauds, i.e. 0.1727 % of the rows
 (about 578 legitimate transactions per fraud), so plain accuracy is not informative and the project uses PR-AUC,
@@ -39,7 +39,7 @@ What the audit means for the project:
 
 - The table contains no missing values, so no imputation is needed.
 - 1,081 rows repeat an earlier row (19 of them fraud, 1,062 legitimate) in 773 groups of identical rows.
-  They are **kept**: removing them would change the dataset size and the row-based `transaction_id`; the effect on the models is for the ML module to judge.
+  Following the user's approval on 15 November 2026, exact raw-row copies are removed before dtype conversion and splitting. All raw columns are compared, the first occurrence is retained, and its original CSV `transaction_id` is preserved.
 - The rows are already ordered by `Time`, so the row position is also the chronological rank. Up to 36 rows share one timestamp.
 - 1 Time value(s) are written in scientific notation (1e+05); pandas therefore reads the whole column as float64 although every value is a whole number of seconds.
 - By the IQR rule 11.2 % of `Amount` values are outliers; the columns with the largest outlier share are V27 (13.8 %), Amount (11.2 %), V28 (10.7 %).
@@ -49,7 +49,10 @@ What the audit means for the project:
 
 The raw CSV is read as 30 `float64` columns and one `int64` column. The dtype policy (`src/data/memory.py`) is explicit and every cast is verified:
 integer-valued columns are cast only if every value is a whole number inside the range of the new type, and `float32` is accepted only if the
-relative error stays below 1e-6. `Amount` is deliberately kept as `float64` so that SQL sums equal the CSV.
+relative error stays below 1e-6. `Amount` stays `float64` so retained transaction amounts match the original CSV.
+Preparation reads the full raw CSV, assigns row identifiers and removes exact copies before converting the V features to `float32`.
+This order prevents small source differences from being mistaken for duplicates after rounding.
+The separate chunked loader remains a benchmark alternative; it does not perform this preparation step.
 
 | Column(s) | dtype before | dtype after | MiB before | MiB after | Values identical | Max relative error |
 |---|---|---|---|---|---|---|
@@ -62,16 +65,17 @@ DataFrame memory: **67.4 MiB → 34.0 MiB (49.6 % smaller)**.
 
 ### Storage formats: baseline against alternatives
 
-Five loading strategies were compared (`src/data/benchmark.py`). Each one runs in a fresh Python process so that its peak resident memory is its own;
-times are the median of 3 runs on this machine (darwin).
+Five loading strategies for the original raw rows were compared (`src/data/benchmark.py`). These benchmarks measure storage and loading, separately from deduplication.
+Each one runs in a fresh Python process so that its peak resident memory is its own;
+times are the median of 3 runs on this machine (linux).
 
 | Variant | Load time, s | Speed-up vs baseline | DataFrame, MiB | Peak RSS above idle, MiB | Columns |
 |---|---|---|---|---|---|
-| csv_float64 | 0.095 | 1.0 | 67.4 | 305 | 31 |
-| csv_chunked_optimized | 0.444 | 0.21 | 34.0 | 222 | 31 |
-| parquet_float64 | 0.079 | 1.2 | 67.4 | 203 | 31 |
-| parquet_optimized | 0.069 | 1.38 | 34.0 | 103 | 31 |
-| parquet_optimized_3cols | 0.042 | 2.27 | 3.5 | 19 | 3 |
+| csv_float64 | 1.009 | 1.0 | 67.4 | 0 | 31 |
+| csv_chunked_optimized | 1.774 | 0.57 | 34.0 | 0 | 31 |
+| parquet_float64 | 0.637 | 1.58 | 67.4 | 0 | 31 |
+| parquet_optimized | 0.173 | 5.83 | 34.0 | 0 | 31 |
+| parquet_optimized_3cols | 0.03 | 34.03 | 3.5 | 0 | 3 |
 
 | File | Size, MiB |
 |---|---|
@@ -81,24 +85,25 @@ times are the median of 3 runs on this machine (darwin).
 | parquet_optimized_snappy | 46.4 |
 
 - File size: the optimised Parquet file is 43.4 MiB against 143.8 MiB for the CSV (70 % smaller).
-- Load time and peak memory above an idle interpreter: CSV baseline 0.095 s / 305 MiB; chunked CSV with per-chunk compression 0.444 s / 222 MiB;
-  optimised Parquet 0.069 s / 103 MiB.
-- Reading only three columns from Parquet (`Time`, `Amount`, `Class`) is 2.3x the speed of the baseline: columnar storage lets the reader skip unused columns.
+- Load time and peak memory above an idle interpreter: CSV baseline 1.009 s / 0 MiB; chunked CSV with per-chunk compression 1.774 s / 0 MiB;
+  optimised Parquet 0.173 s / 0 MiB.
+- Reading only three columns from Parquet (`Time`, `Amount`, `Class`) is 34.0x the speed of the baseline: columnar storage lets the reader skip unused columns.
 
 ## 4. Chronological split without leakage
 
-Fraud patterns change over time and the model will score future transactions, so the split is chronological and deterministic (no random seed):
-rows are ordered by `Time`; the first 70 % are `train`, the next 15 % `validation`, the last 15 % `test`. A cut is moved forward to the next distinct `Time`, so no
-timestamp is shared between two splits. `transaction_id` is the 0-based row position in the CSV and never changes.
+Fraud patterns change over time and the model will score future transactions, so the split is chronological and deterministic (no random seed).
+After exact raw-row copies are removed, retained rows remain ordered by `Time`; the first 70 % are `train`, the next 15 % `validation`, the last 15 % `test`.
+A cut is moved forward to the next distinct `Time`, so no timestamp is shared between two splits and actual percentages may differ slightly from the target fractions.
+`transaction_id` is the original 0-based row position in the CSV and never changes; removed copies leave gaps in the ids.
 
 | Split | Rows | Share of rows | Frauds | Fraud rate | Time range, s | transaction_id range |
 |---|---|---|---|---|---|---|
-| train | 199,364 | 70.00 % | 384 | 0.193 % | 0 - 132,928 | 0 - 199,363 |
-| validation | 42,722 | 15.00 % | 56 | 0.131 % | 132,929 - 151,328 | 199,364 - 242,085 |
-| test | 42,721 | 15.00 % | 52 | 0.122 % | 151,329 - 172,792 | 242,086 - 284,806 |
+| train | 198,609 | 70.00 % | 366 | 0.184 % | 0 - 132,906 | 0 - 199,324 |
+| validation | 42,560 | 15.00 % | 55 | 0.129 % | 132,907 - 151,320 | 199,325 - 242,066 |
+| test | 42,557 | 15.00 % | 52 | 0.122 % | 151,321 - 172,792 | 242,067 - 284,806 |
 
-- The fraud rate is 0.193 % in train, 0.131 % in validation and 0.122 % in test, so the class prior differs between the splits and PR-AUC values from different splits cannot be compared without remembering it.
-- Validation and test contain only 56 and 52 frauds: precision and recall measured there will have wide uncertainty and the final report should say so.
+- The fraud rate is 0.184 % in train, 0.129 % in validation and 0.122 % in test, so the class prior differs between the splits and PR-AUC values from different splits cannot be compared without remembering it.
+- Validation and test contain only 55 and 52 frauds: precision and recall measured there will have wide uncertainty and the final report should say so.
 - Rules that follow for the whole team: fit preprocessing, SMOTE or undersampling on train only; tune the threshold on validation only; use test once, at the end. `src/data/api.py` serves each split (`load_xy("train")`), and the committed `data/processed/split_manifest.parquet` is the shared `transaction_id → split` table.
 
 ## 5. Exploratory data analysis
@@ -123,12 +128,12 @@ validation or test information into feature choices. Descriptive facts about the
 
 ![Feature correlation with the target](../reports/figures/eda_04_feature_target_correlation.png)
 
-Observations (all numbers are from the files in `reports/eda/`):
+Observations (numbers are from the saved raw audit and processed-data EDA):
 
-- Median `Amount` over all rows is 22.00 for legitimate and 9.25 for fraudulent transactions (means 88.29 and 122.21; maximum 25691.16).
-- The largest absolute correlations with `Class` in train: V17 (-0.384), V14 (-0.326), V12 (-0.277), V10 (-0.256), V3 (-0.244), V7 (-0.238).
-- `V1`–`V28` are almost uncorrelated with each other (mean |r| = 0.019, maximum 0.105), which is what one expects from principal components.
-- The hour with the highest fraud rate is hour 26 since the first transaction: 2.05 % (36 frauds among 1,752 transactions). Hours with little traffic give noisy rates.
+- In the raw audit, median `Amount` is 22.00 for legitimate and 9.25 for fraudulent transactions (means 88.29 and 122.21; maximum 25691.16).
+- The largest absolute correlations with `Class` in train: V17 (-0.369), V14 (-0.315), V12 (-0.265), V10 (-0.243), V3 (-0.230), V16 (-0.222).
+- `V1`–`V28` are almost uncorrelated with each other (mean |r| = 0.018, maximum 0.103), which is what one expects from principal components.
+- The hour with the highest fraud rate is hour 26 since the first transaction: 1.56 % (27 frauds among 1,735 transactions). Hours with little traffic give noisy rates.
 
 ## 6. Database design (SQLite)
 
@@ -184,13 +189,13 @@ Coverage of the required constructs, detected automatically from the SQL text:
 
 Findings (computed from the query results; they describe the data, they do not explain it):
 
-- Amounts in the lowest decile of the train split (0.00 - 1.00) hold 138 of the 384 train frauds (35.9 %); the fraud rate there is 0.69 % against 0.19 % for the whole split (`q07`).
-- Transactions with Amount = 0 have a fraud rate of 1.31 % (18 of 1,379 in train) (`q02`).
-- 12 of 48 hours contain at least half of all frauds (`q06`).
-- The highest hourly fraud rate among hours with enough traffic is 2.05 % in hour 26 (36 frauds in 1,752 transactions) (`q03`); 18 hours are above the overall rate (`q04`).
-- Mean gap between consecutive frauds: train 345 s, validation 324 s, test 361 s (`q08`).
-- 1,081 rows repeat an earlier row (`q12`); this equals the 1,081 found by the Pandas audit on the raw CSV.
-- Features with the largest standardised mean difference between fraud and legitimate rows (train): V14 (-2.29), V4 (+2.02), V12 (-1.97), V11 (+1.94), V10 (-1.70), V16 (-1.63) (`q10`).
+- Amounts in the lowest decile of the train split (0.00 - 1.00) hold 128 of the 366 train frauds (35.0 %); the fraud rate there is 0.64 % against 0.18 % for the whole split (`q07`).
+- Transactions with Amount = 0 have a fraud rate of 1.17 % (16 of 1,371 in train) (`q02`).
+- 13 of 48 hours contain at least half of all frauds (`q06`).
+- The highest hourly fraud rate among hours with enough traffic is 1.56 % in hour 26 (27 frauds in 1,735 transactions) (`q03`); 17 hours are above the overall rate (`q04`).
+- Mean gap between consecutive frauds: train 362 s, validation 330 s, test 361 s (`q08`).
+- The raw audit found 1,081 repeated rows, removed before splitting. The stored compact dataset has 0 repeated rows (`q12`); this check uses float32 features, so it can also count rounding coincidences between distinct raw rows.
+- Features with the largest standardised mean difference between fraud and legitimate rows (train): V14 (-2.25), V4 (+1.99), V12 (-1.94), V11 (+1.89), V10 (-1.69), V16 (-1.58) (`q10`).
 
 ## 8. Pandas against SQL
 
@@ -198,28 +203,28 @@ The same four tasks were solved in Pandas (from Parquet) and in SQL (SQLite); th
 
 | Task | Pandas from Parquet, s | Pandas in memory, s | SQLite via SQLAlchemy, s | Same answer |
 |---|---|---|---|---|
-| hourly counts (GROUP BY) | 0.008 | 0.005 | 0.024 | yes |
-| split overview (JOIN + GROUP BY) | 0.031 | 0.026 | 0.06 | yes |
-| 3-hour rolling rate (CTE + window) | 0.007 | 0.004 | 0.025 | yes |
-| exact duplicates over 30 columns (GROUP BY ... HAVING) | 0.306 | 0.282 | 1.523 | yes |
+| hourly counts (GROUP BY) | 0.015 | 0.006 | 0.025 | yes |
+| split overview (JOIN + GROUP BY) | 0.071 | 0.04 | 0.063 | yes |
+| 3-hour rolling rate (CTE + window) | 0.011 | 0.008 | 0.027 | yes |
+| exact duplicates over 30 columns (GROUP BY ... HAVING) | 0.411 | 0.323 | 1.618 | yes |
 
-Pandas on columnar Parquet was faster than SQLite in all 4 tasks (SQL took 2.0x - 5.0x as long end-to-end). SQL is not chosen for speed here: it gives declarative queries, enforced integrity, indexes, and the possibility to join the model predictions of the ML module back to transactions without loading everything into memory.
+Neither approach was faster in every task; see the table. SQL is not chosen for speed here: it gives declarative queries, enforced integrity, indexes, and the possibility to join the model predictions of the ML module back to transactions without loading everything into memory.
 
 ## 9. Verification and reproducibility
 
-- **SQL is cross-checked against Pandas.** 8 queries (`q01`, `q02`, `q05`, `q07`, `q08`, `q10`, `q11`, `q12`) are recomputed independently in Pandas from the Parquet file and compared; the pipeline stops if one differs (`src/db/crosscheck.py`). For example the duplicate count found in SQL equals the count found by the audit on the raw CSV.
+- **SQL is cross-checked against Pandas.** 8 queries (`q01`, `q02`, `q05`, `q07`, `q08`, `q10`, `q11`, `q12`) are recomputed independently in Pandas from the same processed Parquet file and compared; the pipeline stops if one differs (`src/db/crosscheck.py`). Query `q12` checks repeated processed values, while the raw audit counts source copies before removal; these counts describe different stages and need not match.
 - **Tests:** `python -m pytest tests/data_engineering` (synthetic data for unit tests, plus integration checks on the real dataset when it has been built).
 - **One command rebuilds everything:** `python -m src.data.cli run-all`; the console menu is `python -m src.data.cli`. The split and all statistics are deterministic; the only random choice (a plot sample) uses a fixed seed.
-- **Versions** of the libraries are pinned in `requirements-data.txt`.
+- **Versions** of the libraries are pinned in `requirements.txt`; use Python 3.12 from the project `.venv` as described in `docs/data_engineering.md`.
 
 ## 10. Limitations
 
 - The file was downloaded from a public mirror, not from Kaggle; its SHA-256 is recorded so any other copy can be compared, and the row and fraud counts match the official description.
-- Validation and test contain few frauds (56 and 52); the chronological split is the correct protocol but gives noisy estimates.
+- Validation and test contain few frauds (55 and 52); the chronological split is the correct protocol but gives noisy estimates.
 - The V features are anonymised, so EDA can show *that* features separate the classes but not *why*.
 - The data has no absolute clock time; time-of-day statements are not possible.
-- Benchmarks were measured on one machine (darwin) in warm-cache conditions; read them as relative comparisons.
-- Duplicate rows and outliers are reported and kept, not removed; the ML module decides how to treat them.
+- Benchmarks were measured on one machine (linux) in warm-cache conditions; read them as relative comparisons.
+- Exact raw-row copies are removed with the first occurrence retained. Distinct source values can still become equal after `float32` conversion; SQL duplicate checks describe these processed values. Outliers remain available for the ML pipeline to transform if appropriate.
 
 ## 11. Contribution of the author
 

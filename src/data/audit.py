@@ -193,7 +193,7 @@ def _findings(audit: dict) -> list[str]:
     if dup["n_repeated_rows"]:
         notes.append(
             f"{dup['n_repeated_rows']} rows repeat an earlier row "
-            f"({dup['repeated_rows_among_fraud']} of them fraud); kept, ids stay stable."
+            f"({dup['repeated_rows_among_fraud']} of them fraud); preprocessing removes copies and preserves original ids."
         )
 
     time = audit["time"]
