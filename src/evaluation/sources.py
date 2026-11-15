@@ -82,6 +82,11 @@ class ProjectPaths:
         return self.experiments_dir / "predictions.parquet"
 
     @property
+    def evaluation_dir(self) -> Path:
+        """Результаты модуля оценки (Адам) внутри общей папки экспериментов."""
+        return self.experiments_dir / "evaluation"
+
+    @property
     def ml_figures_dir(self) -> Path:
         return self.experiments_dir / "figures"
 

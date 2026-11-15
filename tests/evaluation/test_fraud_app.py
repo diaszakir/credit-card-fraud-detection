@@ -49,8 +49,10 @@ def test_model_comparison_keeps_infeasible_run_empty(project):
 
 def test_error_analysis_counts_outcomes_from_saved_predictions(project):
     app = open_section("Error Analysis")
-    counts = {metric.label: metric.value for metric in app.metric}
-    assert counts == {"TP": "1", "FP": "1", "FN": "1", "TN": "1"}
+    values = {metric.label: metric.value for metric in app.main.metric}
+    assert {k: values[k] for k in ("TP", "FP", "FN", "TN")} == {"TP": "1", "FP": "1", "FN": "1", "TN": "1"}
+    assert {"AP", "PR-AUC", "ROC-AUC", "F1", "Precision", "Recall"} <= set(values)
+    assert not app.warning  # метрики совпали с сохранёнными в фикстуре
 
 
 def test_csv_prediction_uses_frozen_model_and_label_column(project):
