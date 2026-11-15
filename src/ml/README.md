@@ -1,6 +1,6 @@
-# ML часть Диаса
+# Машинное обучение
 
-Модуль сравнивает baseline, LogisticRegression и RandomForest на хронологическом разбиении 70/15/15. Цель — максимальный validation recall при **precision ≥ 0.85**. Test оставлен Адаму для итоговой оценки замороженной модели.
+Модуль сравнивает baseline, LogisticRegression и RandomForest на хронологическом разбиении 70/15/15. Цель — максимальный validation recall при **precision ≥ 0.85**. Test используется для итоговой оценки замороженной модели.
 
 ## Окружение
 
@@ -95,7 +95,7 @@ py -3.12 -m venv .venv
 
 Каждый запуск сохраняет весь Pipeline в `models/runs/`, JSON в `reports/experiments/results/` и validation scores в локальном cache. Метаданные содержат версии данных, разбиения, кода и библиотек, параметры, seed и команду. `freeze` создаёт `models/fraud_pipeline.joblib` и соседний JSON с происхождением исходных файлов (`source_paths`); `verify` проверяет передачу. Загружайте только доверенные joblib.
 
-После сбоя прочитайте `progress.json` и повторите сохранённую команду: завершённый запуск переиспользуется после проверки контрольных сумм. `--force` явно запускает обучение заново. После выбора порога пайплайн не переобучается на train+validation. Итоговые test-метрики и Streamlit добавляет Адам.
+После сбоя прочитайте `progress.json` и повторите сохранённую команду: завершённый запуск переиспользуется после проверки контрольных сумм. `--force` явно запускает обучение заново. После выбора порога пайплайн не переобучается на train+validation. Итоговая оценка на test и интеграция Streamlit — следующий этап проекта.
 
 После `compare` файлы результатов можно загрузить в уже созданную SQLite базу:
 
@@ -110,10 +110,8 @@ engine.dispose()
 
 В экспорт входят только validation-прогнозы. У Dummy без допустимого порога сохраняются AP и PR-AUC, но нет выдуманных решений класса. База и построчные прогнозы остаются локальными файлами.
 
-## Источники и помощь AI
+## Источники
 
 Источник данных — [ULB Credit Card Fraud Detection на Kaggle](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud). Проверенные метаданные провайдера, обозначение лицензии и SHA-256 загруженного CSV сохранены в `reports/experiments/data_source.json`. Исходные транзакции не распространяются через Git.
 
 Определения метрик: [AP](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.average_precision_score.html) и [precision–recall curve](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_recall_curve.html); обучение с пересэмплированием — [imblearn Pipeline](https://imbalanced-learn.org/stable/references/generated/imblearn.pipeline.Pipeline.html).
-
-ML-код, проверки и документация подготовлены с помощью Codex под руководством Диаса. Перед сдачей Диас должен проверить свой вклад, уметь объяснить функции и оформить раскрытие AI-помощи по правилам курса.
