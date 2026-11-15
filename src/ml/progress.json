@@ -39,7 +39,11 @@
     },
     "7": {
       "name": "LogisticRegression без балансировки",
-      "status": "pending"
+      "status": "complete",
+      "note": "LogisticRegression none: validation AP=0.7788622161264065, precision=0.9, recall=0.4909090909090909, threshold=0.6158176799199838. Порог подобран только на validation; test не оценивался.",
+      "checks": [
+        "Real fixed experiment completed; shared prediction scores exactly match validation scores"
+      ]
     },
     "8": {
       "name": "RandomForest без балансировки",
@@ -78,5 +82,5 @@
       "status": "pending"
     }
   },
-  "updated_at": "2026-11-15T07:26:47.357933+00:00"
+  "updated_at": "2026-11-15T07:27:14.410960+00:00"
 }
