@@ -81,7 +81,7 @@
     "12": {
       "name": "Подбор гиперпараметров внутри train",
       "status": "in_progress",
-      "note": "Running random_forest_none_cv_2bb17c46f85d; resume this command after interruption. Completed result JSONs are reused.",
+      "note": "Running random_forest_class_weight_cv_9db7932bff3b; resume this command after interruption. Completed result JSONs are reused.",
       "checks": []
     },
     "13": {
@@ -101,5 +101,5 @@
       "status": "pending"
     }
   },
-  "updated_at": "2026-11-15T07:49:17.014838+00:00"
+  "updated_at": "2026-11-15T08:15:23.429183+00:00"
 }
