@@ -47,7 +47,11 @@
     },
     "8": {
       "name": "RandomForest без балансировки",
-      "status": "pending"
+      "status": "complete",
+      "note": "RandomForest none: precision=0.9555555555555556, recall=0.7818181818181819, AP=0.8553080427663892, threshold=0.29333333333333333. Final fit 238.62s, isolated process one thread.",
+      "checks": [
+        "Real validation result; 43 TP, 2 FP, 12 FN; no test prediction"
+      ]
     },
     "9": {
       "name": "Эксперименты class_weight",
@@ -82,5 +86,5 @@
       "status": "pending"
     }
   },
-  "updated_at": "2026-11-15T07:27:14.410960+00:00"
+  "updated_at": "2026-11-15T07:32:34.614626+00:00"
 }
