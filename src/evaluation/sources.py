@@ -176,12 +176,12 @@ def list_sql_results(paths: ProjectPaths) -> Source:
     folder = paths.sql_results_dir
     files = sorted(folder.glob("q*.csv")) if folder.is_dir() else []
     if not files:
-        return Source("sql_results", False, None, f"В {folder} нет результатов SQL. Выполните python -m src.data.cli query.", folder)
+        return Source("sql_results", False, None, f"В {folder} нет результатов SQL. Выполните python -m src.data.cli sql.", folder)
     return Source("sql_results", True, {path.stem: path for path in files}, "", folder)
 
 
 def load_sql_result(paths: ProjectPaths, name: str) -> Source:
-    return _read_table(name, paths.sql_results_dir / f"{name}.csv", "Выполните python -m src.data.cli query.")
+    return _read_table(name, paths.sql_results_dir / f"{name}.csv", "Выполните python -m src.data.cli sql.")
 
 
 def describe_sql_queries() -> Source:
@@ -296,18 +296,32 @@ def load_validation_predictions(paths: ProjectPaths, metadata: dict | None = Non
 
 
 # --------------------------- Сводка состояния --------------------------- #
+def _validation_predictions_path(paths: ProjectPaths) -> Path:
+    """predictions.parquet или кэш выбранного запуска — что из них есть на диске."""
+    if paths.predictions.is_file():
+        return paths.predictions
+    try:
+        metadata = json.loads(paths.model_metadata.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeError):
+        return paths.predictions
+    cache = selected_validation_scores_path(paths, metadata) if isinstance(metadata, dict) else None
+    return cache if cache is not None and cache.is_file() else paths.predictions
+
+
 def availability(paths: ProjectPaths) -> pd.DataFrame:
     """Таблица «что есть на этом компьютере» для боковой панели и проверки запуска."""
+    data, model = "python -m src.data.cli run-all", "python -m src.ml.reproduce"
     items = [
-        ("Разбиение train/validation/test", paths.split_summary, "Жандарбек"),
-        ("Обработанные транзакции (Parquet)", paths.transactions, "Жандарбек"),
-        ("SQLite fraud.db", paths.sqlite, "Жандарбек"),
-        ("Результаты SQL-запросов", paths.sql_results_dir, "Жандарбек"),
-        ("Сравнение экспериментов", paths.comparison, "Диас"),
-        ("Метаданные выбранной модели", paths.model_metadata, "Диас"),
-        ("Файл модели .joblib", paths.model, "Диас"),
-        ("Построчные validation-прогнозы", paths.predictions, "Диас"),
+        ("Разбиение train/validation/test", paths.split_summary, "Жандарбек", data),
+        ("Обработанные транзакции (Parquet)", paths.transactions, "Жандарбек", data),
+        ("SQLite fraud.db", paths.sqlite, "Жандарбек", "python -m src.data.cli build-db"),
+        ("Результаты SQL-запросов", paths.sql_results_dir, "Жандарбек", "python -m src.data.cli sql"),
+        ("Сравнение экспериментов", paths.comparison, "Диас", "python -m src.ml.cli compare"),
+        ("Метаданные выбранной модели", paths.model_metadata, "Диас", "python -m src.ml.handoff freeze"),
+        ("Файл модели .joblib", paths.model, "Диас", model),
+        ("Построчные validation-прогнозы", _validation_predictions_path(paths), "Диас", model),
     ]
-    rows = [{"Артефакт": label, "Владелец": owner, "Есть": path.exists(), "Путь": str(path.relative_to(paths.root))}
-            for label, path, owner in items]
+    rows = [{"Артефакт": label, "Владелец": owner, "Есть": path.exists(),
+             "Путь": str(path.relative_to(paths.root)), "Команда": command}
+            for label, path, owner, command in items]
     return pd.DataFrame(rows)
