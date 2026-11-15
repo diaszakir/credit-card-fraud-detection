@@ -181,7 +181,7 @@ DataFrame with the same row index/order and `score`, `threshold`, `y_pred`. It c
 fraud score using `classes_ == 1`, and applies the saved `>=` comparison. Load only trusted
 joblib files through `src.ml.artifacts.load_artifact`.
 
-Full commands and the fresh-clone artifact recipe are in `src/ml/README.md`. Final test evaluation
+Full commands and the fresh-clone artifact recipe are in the root `README.md`. Final test evaluation
 and Streamlit remain Adam's responsibility: use the frozen pipeline and threshold without
 retraining on train+validation or adjusting the threshold after seeing test results.
 
