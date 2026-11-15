@@ -92,3 +92,15 @@ def test_model_comparison_shows_curves_and_comparison_charts(project):
     assert not app.exception and not app.error, [e.value for e in app.error]
     charts = app.main.get("plotly_chart")
     assert len(charts) == 5  # PR, порог, ROC, рабочие точки, AP
+
+
+def test_error_analysis_tabs_use_features_sql_and_saved_importance(data_project):
+    from src.evaluation import importance as imp
+
+    table, info = imp.compute_selected(data_project["root"], n_repeats=2, allow_non_real=True)
+    imp.save(table, dict(info, provenance="real"), data_project["root"] / "reports" / "experiments" / "evaluation")
+    app = open_section("Error Analysis")
+    assert not app.exception and not app.error, [e.value for e in app.error]
+    assert len(app.main.get("plotly_chart")) == 3  # FN vs TP, FP vs TN, importance
+    captions = " ".join(c.value for c in app.main.caption)
+    assert "метки совпадают" in captions

@@ -109,3 +109,63 @@ def project(tmp_path, monkeypatch):
 
     return {"root": tmp_path, "pipeline": pipeline, "metadata": metadata, "model_path": model_path,
             "X_val": X_val, "y_val": y_val, "predicted": predicted}
+
+
+@pytest.fixture
+def data_project(tmp_path, monkeypatch):
+    """Синтетические транзакции в формате Жандарбека + fraud.db + модель, обученная на их train.
+
+    Признак V1 смещён у fraud, чтобы модель что-то различала. Это тестовые данные, не результаты.
+    """
+    from src.config import TIME_COLUMN
+    from src.data.memory import optimize_dtypes
+    from src.data.splitting import build_processed_frame
+    from src.data.storage import save_parquet
+    from src.db.builder import build_database
+    from tests.data_engineering.conftest import make_raw_frame
+
+    monkeypatch.setenv(ROOT_ENV_VAR, str(tmp_path))
+    monkeypatch.delenv("FRAUD_APP_STUB", raising=False)
+    raw = make_raw_frame(n=3000, n_fraud=150, seed=7)
+    rng = np.random.default_rng(7)
+    raw[TIME_COLUMN] = np.sort(rng.integers(0, 5 * 3600, size=len(raw))).astype("float64")
+    raw.loc[raw["Class"] == 1, "V1"] += 3.0
+    processed = build_processed_frame(optimize_dtypes(raw))
+    processed_dir = tmp_path / "data" / "processed"
+    transactions = save_parquet(processed, processed_dir / "transactions.parquet")
+    build_database(transactions, processed_dir / "fraud.db")
+
+    train = processed[processed["split"] == "train"]
+    validation = processed[processed["split"] == "validation"].set_index("transaction_id")
+    pipeline = make_pipeline("logistic_regression")
+    pipeline.fit(train[FEATURE_COLUMNS].astype(DTYPES), train["Class"])
+
+    run_id = "synthetic_data_model"
+    metadata = {
+        "schema_version": 1, "protocol_version": "synthetic-eval-test", "run_id": run_id,
+        "model_name": "logistic_regression", "imbalance_strategy": "none", "tuning": "fixed",
+        "split": "validation", "frozen": True, "test_evaluated": False, "provenance": "synthetic_fixture",
+        "feature_names": list(FEATURE_COLUMNS), "feature_dtypes": DTYPES,
+        "positive_label": 1, "threshold": 0.3, "comparison": ">=", "min_precision": 0.85,
+        "dataset_sha256": "a" * 64, "processed_sha256": "b" * 64, "split_sha256": "c" * 64,
+        "source_sha256": "d" * 64, "config_sha256": "e" * 64,
+        "library_versions": {
+            "python": platform.python_version(),
+            **{name: version(name) for name in ("scikit-learn", "imbalanced-learn", "joblib", "numpy", "scipy")},
+        },
+        "source_paths": {"validation_scores": f"reports/experiments/cache/{run_id}/validation.parquet"},
+    }
+    X_val = validation[FEATURE_COLUMNS].astype(DTYPES)
+    predicted = predict_transactions(X_val, pipeline, metadata)
+    metadata["validation_metrics"] = compute_metrics(validation["Class"].to_numpy(), predicted["score"].to_numpy(), 0.3)
+    model_path = tmp_path / "models" / "fraud_pipeline.joblib"
+    metadata = save_artifact(pipeline, metadata, model_path)
+    write_lock(tmp_path, metadata)
+    cache = tmp_path / metadata["source_paths"]["validation_scores"]
+    cache.parent.mkdir(parents=True)
+    predictions = pd.DataFrame({"transaction_id": X_val.index.astype("int64"), "split": "validation",
+                                "y_true": validation["Class"].to_numpy().astype("int8"),
+                                "score": predicted["score"].to_numpy(), "y_pred": predicted["y_pred"].to_numpy()})
+    predictions.to_parquet(cache)
+    return {"root": tmp_path, "processed": processed, "predictions": predictions, "metadata": metadata,
+            "pipeline": pipeline}

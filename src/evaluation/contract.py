@@ -260,6 +260,15 @@ class FrozenPipelinePredictor:
         self._metadata = metadata
         self.info = ModelInfo.from_metadata(metadata)
 
+    @property
+    def pipeline(self):
+        """Обученный Pipeline только для чтения (permutation importance)."""
+        return self._pipeline
+
+    @property
+    def metadata(self) -> dict:
+        return dict(self._metadata)
+
     @classmethod
     def load(cls, model_path: Path, lock_path: Path) -> "FrozenPipelinePredictor":
         """Проверить selection_lock и SHA, затем загрузить доверенный joblib."""

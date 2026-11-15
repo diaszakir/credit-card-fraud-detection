@@ -116,7 +116,8 @@ def show_curves(project) -> None:
         st.caption("Порог не подбирается заново: вертикальная линия — порог, выбранный Диасом на validation.")
     with roc_tab:
         st.plotly_chart(plots.roc_figure(roc, point, result["roc_auc"]), key="fig_roc")
-        st.caption("При доле fraud 0.13% ROC-кривая выглядит оптимистично; для сравнения используется PR и AP.")
+        st.caption(f"При доле fraud {100 * result['prevalence']:.2f}% ROC-кривая выглядит оптимистично; "
+                   "для сравнения используется PR и AP.")
 
 
 def render() -> None:
