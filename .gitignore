@@ -40,3 +40,5 @@ AGENTS.dias.md
 models/**/*.joblib
 reports/experiments/cache/
 reports/experiments/predictions.parquet
+
+./src/ml/README.md
