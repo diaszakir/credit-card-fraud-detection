@@ -1,8 +1,10 @@
 """Восстановление из рецепта на синтетических данных, без чтения настоящего test."""
 
+import errno
 import hashlib
 import json
 import os
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
@@ -162,6 +164,39 @@ def test_existing_artifact_is_verified_without_refitting(recipe, monkeypatch):
     report = reproduce.reproduce_selected()
     assert report["status"] == "already_present" and not report["fit_performed"]
     assert all(paths[name].read_bytes() == content for name, content in before.items())
+
+
+def test_reproduction_publishes_cache_with_separate_models_and_reports_volumes(recipe, monkeypatch):
+    paths = recipe["paths"]
+    models_dir = paths["FINAL_MODEL"].parent.resolve()
+    reports_dir = (paths["ROOT_DIR"] / "reports").resolve()
+    cache = paths["ROOT_DIR"] / recipe["metadata"]["source_paths"]["validation_scores"]
+    original_replace = Path.replace
+    replacements = []
+
+    def replace_on_same_volume(source, destination):
+        destination = Path(destination)
+        replacements.append((source.resolve(), destination.resolve()))
+        if source.resolve().is_relative_to(models_dir) and destination.resolve().is_relative_to(reports_dir):
+            raise OSError(errno.EXDEV, "Invalid cross-device link")
+        return original_replace(source, destination)
+
+    monkeypatch.setattr(Path, "replace", replace_on_same_volume)
+    report = reproduce.reproduce_selected()
+
+    assert report["status"] == "reproduced"
+    assert recipe["calls"] == ["train", "validation"]
+    assert report["scores_values_match"] and report["validation_metrics_match"]
+    assert not report["threshold_retuned"] and not report["test_evaluated"]
+    cache_sources = [source for source, destination in replacements if destination == cache.resolve()]
+    assert len(cache_sources) == 1 and cache_sources[0].is_relative_to(cache.parent.resolve())
+    loaded, metadata = load_artifact(paths["FINAL_MODEL"])
+    assert metadata["threshold"] == recipe["metadata"]["threshold"]
+    assert metadata["scores_sha256"] == file_sha256(cache)
+    assert metadata["validation_scores_values_sha256"] == recipe["metadata"]["validation_scores_values_sha256"]
+    pd.testing.assert_frame_equal(
+        predict_transactions(recipe["frames"]["validation"], loaded, metadata), recipe["predictions"],
+    )
 
 
 @pytest.mark.parametrize("field", list(reproduce.VALIDATION_DIGESTS))

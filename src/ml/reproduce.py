@@ -176,8 +176,12 @@ def reproduce_selected():
     })
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     Path(FINAL_MODEL).parent.mkdir(parents=True, exist_ok=True)
-    with TemporaryDirectory(prefix=".reproduce-", dir=Path(FINAL_MODEL).parent) as directory:
-        staged_cache = Path(directory) / "validation.parquet"
+    # models и reports могут быть разными Docker volumes: rename работает внутри одного тома.
+    with (
+        TemporaryDirectory(prefix=".reproduce-", dir=Path(FINAL_MODEL).parent) as directory,
+        TemporaryDirectory(prefix=".reproduce-", dir=cache_path.parent) as cache_directory,
+    ):
+        staged_cache = Path(cache_directory) / "validation.parquet"
         cache.to_parquet(staged_cache, index=False)
         reproduced = dict(metadata)
         reproduced.update({
