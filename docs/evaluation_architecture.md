@@ -18,10 +18,10 @@
                            ▼
           src/evaluation/sources.py      — единая точка чтения, ничего не пишет
           src/evaluation/contract.py     — контракт прогнозов, проверка схемы, Predictor
-          (этап 2) metrics.py            — AP, PR-AUC, ROC-AUC, P/R/F1, confusion matrix
-          (этап 3) curves.py, plots.py   — PR-кривые, P/R от порога, сравнение моделей
-          (этап 4) errors.py, importance.py — FP/FN, permutation importance
-          (этап 5) final_test.py         — однократная итоговая оценка test
+          src/evaluation/metrics.py      — AP, PR-AUC, ROC-AUC, P/R/F1, confusion matrix
+          src/evaluation/curves.py, plots.py — PR-кривые, P/R от порога, сравнение моделей
+          src/evaluation/errors.py, importance.py — FP/FN, permutation importance
+          src/evaluation/final_test.py   — однократная итоговая оценка test
                            ▼
           app/fraud_app.py + app/views/*  — Data Overview, Model Comparison,
                                             Error Analysis, Fraud Prediction
@@ -67,7 +67,7 @@
 
 `StubPredictor` нужен только для разработки интерфейса. Его `score` — детерминированный хеш
 значений строки, а не модель; порог 0.5 условный. Приложение показывает красную плашку
-«Заглушка», а будущий модуль метрик отказывается сохранять результаты с `provenance != "real"`.
+«Заглушка», а модуль метрик отказывается сохранять результаты с `provenance != "real"`.
 Автоматической подмены реальной модели заглушкой нет: при отсутствии `.joblib` приложение
 показывает команду восстановления из README.
 
@@ -87,19 +87,24 @@ score в [0, 1], и если известен порог — `y_pred == (score >
 3. PR-AUC — трапеции `auc(recall, precision)`, AP — `average_precision_score`, как у Диаса
    (`src.ml.metrics.compute_metrics` переиспользуется, а не копируется).
 4. Отсутствующий порог (Dummy) — это «нет допустимого порога», а не 0 или NaN.
-5. В validation 55 fraud, в test 52 (`reports/split_summary.json`): у precision/recall будет
-   указана неопределённость (этап 2: доверительный интервал Уилсона).
+5. В validation 55 fraud, в test 52 (`reports/split_summary.json`): для precision и recall
+   указывается 95% доверительный интервал Уилсона.
 
-## 5. План этапов
+## 5. Этапы и команды
 
-| Этап | Результат | Зависит от |
-|---|---|---|
-| 1 | архитектура, контракт, `sources.py`, каркас 4 разделов, тесты | — |
-| 2 | `metrics.py`: AP, PR-AUC, ROC-AUC, P/R/F1, CM, интервалы | кэш validation Диаса |
-| 3 | `curves.py`, `plots.py`: PR-кривые, P/R от порога, сравнение 17 запусков | этап 2 |
-| 4 | `errors.py`: FP/FN, SQL JOIN с `transactions`; `importance.py`: permutation importance | этап 2, `fraud.db` |
-| 5 | `final_test.py`: однократная оценка test, отчёт | замороженная модель |
-| 6 | README, `requirements.txt` через `uv pip compile`, проверка чистого клона | всё выше |
+| Этап | Модуль | Команда | Результат |
+|---|---|---|---|
+| 1 | `contract.py`, `sources.py`, `app/` | `streamlit run app/fraud_app.py` | контракт прогнозов, чтение файлов команды, четыре раздела |
+| 2 | `metrics.py` | `python -m src.evaluation.metrics` | метрики validation, интервалы, сверка с ML |
+| 3 | `curves.py`, `plots.py` | `python -m src.evaluation.plots` | PR, ROC, зависимость от порога, сравнение запусков |
+| 4 | `errors.py`, `sql/`, `importance.py` | `python -m src.evaluation.importance` | признаки и SQL-срезы ошибок, permutation importance |
+| 5 | `final_test.py` | `python -m src.evaluation.final_test --confirm` | однократная итоговая оценка test |
+| 6 | `check.py`, `README.md`, `requirements.in` | `python -m src.evaluation.check --strict` | проверка запуска, инструкция, зависимости через uv |
+
+Все результаты пишутся в `reports/experiments/evaluation/`; сохраняются только результаты модели
+с `provenance = "real"`. Итоговая оценка test выполнена; её запись — `test_final.json` с отпечатком
+пакета модели. Поле `test_evaluated` в `models/fraud_pipeline.json` модуль оценки не меняет
+(это файл Диаса).
 
 ## 6. Что нужно согласовать с командой
 
