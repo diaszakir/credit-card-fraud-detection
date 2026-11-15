@@ -88,7 +88,11 @@
     },
     "13": {
       "name": "Сравнение моделей и выбор порога на validation",
-      "status": "pending"
+      "status": "complete",
+      "note": "Из 17 запусков выбран random_forest_class_weight_cv_9db7932bff3b: precision=0.9183673469387755, recall=0.8181818181818182, PR-AUC=0.8720854421990842, AP=0.8721612606940565, threshold=0.3452106858370786. Сравнение и графики сохранены.",
+      "checks": [
+        "17 runs exported with verified cache/provenance; three actual validation figures visually inspected; selected threshold finds 45/55 fraud with 4 FP"
+      ]
     },
     "14": {
       "name": "Замороженный пайплайн и метаданные",
@@ -103,5 +107,5 @@
       "status": "pending"
     }
   },
-  "updated_at": "2026-11-15T08:58:05.239831+00:00"
+  "updated_at": "2026-11-15T08:58:46.436303+00:00"
 }
