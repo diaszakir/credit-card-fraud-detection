@@ -63,7 +63,11 @@
     },
     "10": {
       "name": "Эксперименты SMOTE",
-      "status": "pending"
+      "status": "complete",
+      "note": "SMOTE отдельно: LR precision=0.9393939393939394 recall=0.5636363636363636; RF precision=1.0 recall=0.7818181818181819. sampling_strategy=0.1 означает minority/majority, не долю0.1 всехстрок. Применялся только внутри train Pipeline.",
+      "checks": [
+        "Both real fixed SMOTE runs completed; natural validation row count unchanged"
+      ]
     },
     "11": {
       "name": "Эксперименты undersampling",
@@ -90,5 +94,5 @@
       "status": "pending"
     }
   },
-  "updated_at": "2026-11-15T07:36:25.583391+00:00"
+  "updated_at": "2026-11-15T07:43:56.571761+00:00"
 }
