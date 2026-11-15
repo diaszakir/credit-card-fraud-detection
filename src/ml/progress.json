@@ -104,12 +104,16 @@
     },
     "15": {
       "name": "Проверка загрузки и предсказания",
-      "status": "pending"
+      "status": "complete",
+      "note": "Загружен frozen joblib: на всех 42560 validation строках scores, классы и метрики идентичны исходным. Неверная схема отклоняется; synthetic пример явно помечен.",
+      "checks": [
+        "Actual handoff verify passed; 72 targeted comparison/handoff/reproduce tests passed including processed provenance, lock tampering, threshold and recipe guards"
+      ]
     },
     "16": {
       "name": "Передача Адаму и итоговые проверки ML",
       "status": "pending"
     }
   },
-  "updated_at": "2026-11-15T08:59:11.496573+00:00"
+  "updated_at": "2026-11-15T08:59:45.047842+00:00"
 }

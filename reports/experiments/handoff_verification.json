@@ -1,0 +1,26 @@
+{
+  "selected_run_id": "random_forest_class_weight_cv_9db7932bff3b",
+  "artifact_sha256": "69796eae8d606e7f34b29094f8f8329bb2bd32bce7f5d406cd5b84cf2d038dd0",
+  "validation_rows_checked": 42560,
+  "scores_identical_after_reload": true,
+  "classes_identical_after_reload": true,
+  "metrics_identical_after_reload": true,
+  "invalid_schema_rejected": true,
+  "schema_error": "invalid input columns: missing=['V1'], extra=[]",
+  "synthetic_example_checked": true,
+  "threshold": 0.3452106858370786,
+  "comparison": ">=",
+  "test_evaluated": false,
+  "validation_metrics": {
+    "pr_auc": 0.8720854421990842,
+    "average_precision": 0.8721612606940565,
+    "precision": 0.9183673469387755,
+    "recall": 0.8181818181818182,
+    "accuracy": 0.999671052631579,
+    "tn": 42501,
+    "fp": 4,
+    "fn": 10,
+    "tp": 45,
+    "precision_constraint_met": true
+  }
+}
