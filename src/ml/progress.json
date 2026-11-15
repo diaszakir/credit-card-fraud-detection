@@ -30,7 +30,12 @@
     },
     "6": {
       "name": "Baseline DummyClassifier",
-      "status": "pending"
+      "status": "in_progress",
+      "note": "Функции метрик, предсказания, пайплайны и isolated worker готовы; 148 ML тестов прошли. Сейчас foundation commit, затем реальный Dummy baseline.",
+      "checks": [
+        "148 ML tests passed in 10.96s",
+        "CLI --help and git diff --check passed"
+      ]
     },
     "7": {
       "name": "LogisticRegression без балансировки",
@@ -73,5 +78,5 @@
       "status": "pending"
     }
   },
-  "updated_at": "2026-11-15T07:21:23.835172+00:00"
+  "updated_at": "2026-11-15T07:25:48.561403+00:00"
 }

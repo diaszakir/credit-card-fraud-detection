@@ -35,3 +35,8 @@ INSTRUCTIONS.md
 AGENTS.md
 
 AGENTS.dias.md
+
+# Trained binary pipelines and row-level prediction caches are reproducible local files.
+models/**/*.joblib
+reports/experiments/cache/
+reports/experiments/predictions.parquet
