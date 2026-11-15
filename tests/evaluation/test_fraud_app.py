@@ -85,3 +85,10 @@ def test_stub_mode_is_explicit_and_clearly_marked(empty_project, monkeypatch):
     app.button(key="predict_manual").click().run()
     assert not app.exception
     assert result_table(app)["score"].between(0, 1).all()
+
+
+def test_model_comparison_shows_curves_and_comparison_charts(project):
+    app = open_section("Model Comparison")
+    assert not app.exception and not app.error, [e.value for e in app.error]
+    charts = app.main.get("plotly_chart")
+    assert len(charts) == 5  # PR, порог, ROC, рабочие точки, AP
