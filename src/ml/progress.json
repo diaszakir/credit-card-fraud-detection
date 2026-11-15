@@ -1,0 +1,71 @@
+{
+  "objective": "Finish Dias ML stages with local commits; never push.",
+  "constraints": [
+    "min_precision=0.85; chronological 70/15/15 after exact raw deduplication",
+    "Do not use test rows for ML selection or final evaluation; hand off to Adam",
+    "Use simple code in the style of Assignment 3 and 4",
+    "Use configured Git identity; commit explicit files after each stage",
+    "Create DIAS_ML_REPORT.md only at the end; do not commit or ignore it"
+  ],
+  "resume": "Read AGENTS.md, AGENTS.dias.md, this file and git log. Resume the first incomplete stage. Run python -m src.ml.cli --help for saved commands.",
+  "stages": {
+    "4": {
+      "name": "Окружение и фиксированные зависимости",
+      "status": "complete",
+      "note": "Python 3.12.16; 30 точных зависимостей, включая ML; рабочая .venv обновлена. Точка восстановления сохраняется после каждого этапа.",
+      "checks": [
+        "pip check: No broken requirements found",
+        "Clean candidate environment: 78 tests passed; ML imports OK; Windows wheel resolution OK, native Windows/macOS tests unavailable"
+      ]
+    },
+    "5": {
+      "name": "Схема данных, разбиение и временные CV-фолды",
+      "status": "pending"
+    },
+    "6": {
+      "name": "Baseline DummyClassifier",
+      "status": "pending"
+    },
+    "7": {
+      "name": "LogisticRegression без балансировки",
+      "status": "pending"
+    },
+    "8": {
+      "name": "RandomForest без балансировки",
+      "status": "pending"
+    },
+    "9": {
+      "name": "Эксперименты class_weight",
+      "status": "pending"
+    },
+    "10": {
+      "name": "Эксперименты SMOTE",
+      "status": "pending"
+    },
+    "11": {
+      "name": "Эксперименты undersampling",
+      "status": "pending"
+    },
+    "12": {
+      "name": "Подбор гиперпараметров внутри train",
+      "status": "pending"
+    },
+    "13": {
+      "name": "Сравнение моделей и выбор порога на validation",
+      "status": "pending"
+    },
+    "14": {
+      "name": "Замороженный пайплайн и метаданные",
+      "status": "pending"
+    },
+    "15": {
+      "name": "Проверка загрузки и предсказания",
+      "status": "pending"
+    },
+    "16": {
+      "name": "Передача Адаму и итоговые проверки ML",
+      "status": "pending"
+    }
+  },
+  "updated_at": "2026-11-15T07:14:05.987471+00:00"
+}
