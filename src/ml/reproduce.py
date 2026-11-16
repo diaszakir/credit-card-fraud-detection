@@ -185,6 +185,8 @@ def reproduce_selected():
         cache.to_parquet(staged_cache, index=False)
         reproduced = dict(metadata)
         reproduced.update({
+            "recipe_artifact_sha256": metadata.get("recipe_artifact_sha256",
+                metadata.get("reproduced_from_artifact_sha256", metadata["artifact_sha256"])),
             "reproduced_from_artifact_sha256": metadata["artifact_sha256"],
             "reproduced_at": datetime.now(timezone.utc).isoformat(),
             "reproduction_command": "./.venv/bin/python -m src.ml.reproduce",

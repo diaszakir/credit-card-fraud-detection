@@ -70,3 +70,17 @@ def test_all_sections_render(fixture_name, request):
     sections = check.check_app_sections(timeout=60)
     assert [c.name for c in sections] == [f"Раздел {s}" for s in check.SECTIONS]
     assert all(c.status == check.OK for c in sections), [c.detail for c in sections]
+
+
+def test_saved_test_mismatch_is_a_failure_without_reading_test(data_project):
+    from src.evaluation.final_test import evaluate_test
+    paths = project_paths()
+    document = evaluate_test(data_project['root'], allow_non_real=True)['result']
+    path = paths.evaluation_dir / 'test_final.json'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(document))
+    assert by_name(check.run_checks(with_app=False))['Итоговая оценка test'].status == check.OK
+    document['fingerprint']['artifact_sha256'] = '0' * 64
+    path.write_text(json.dumps(document))
+    result = by_name(check.run_checks(with_app=False))['Итоговая оценка test']
+    assert result.status == check.FAIL and 'несогласованный' in result.detail

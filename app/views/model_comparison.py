@@ -122,7 +122,8 @@ def show_curves(project) -> None:
 
 def show_test(project) -> None:
     """Итоговая оценка test: только сохранённый результат, приложение её не запускает."""
-    from src.evaluation.final_test import load_result
+    from src.evaluation.final_test import load_result, validate_result
+    from app.views.common import predictor_status
 
     st.subheader("Итоговая оценка на test")
     try:
@@ -131,8 +132,17 @@ def show_test(project) -> None:
         st.warning(f"Файл итоговой оценки повреждён: {exc}")
         return
     if document is None:
-        st.info("Итоговая оценка на test ещё не выполнялась. Она запускается один раз командой "
+        st.info("Сохранённая итоговая оценка на test недоступна на этом компьютере. Она запускается один раз командой "
                 "python -m src.evaluation.final_test --confirm после согласования с командой.")
+        return
+    status = predictor_status()
+    if status.mode != "frozen":
+        st.warning("Нельзя подтвердить итоговые метрики: замороженная модель не загружена.")
+        return
+    try:
+        validate_result(document, project, status.predictor)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        st.error(f"Итоговые метрики не соответствуют текущему пакету: {exc}")
         return
     rows = [{"Метрика": key, "Validation": values["validation"], "Test": values["test"]}
             for key, values in document["validation_vs_test"].items()]

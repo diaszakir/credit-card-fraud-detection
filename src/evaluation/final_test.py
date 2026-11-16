@@ -1,4 +1,4 @@
-"""Итоговая независимая оценка замороженной модели на test (выполняется один раз).
+"""Итоговая оценка замороженной модели и явная проверка её происхождения.
 
 Правила протокола (docs/CONTRACTS.md, раздел 4; соглашения проекта 6–7):
 * модель и порог берутся из замороженного пакета Диаса и не меняются;
@@ -9,6 +9,7 @@
     python -m src.evaluation.final_test            # показать, что будет сделано, и выйти
     python -m src.evaluation.final_test --confirm  # выполнить оценку на test
     python -m src.evaluation.final_test --show     # показать сохранённый результат
+    python -m src.evaluation.final_test --verify-existing  # явная проверка legacy с сохранением истории
 """
 
 from __future__ import annotations
@@ -46,7 +47,35 @@ def load_result(root=None) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
 
 
-def preflight(root=None, allow_non_real: bool = False):
+def validate_result(document, paths, predictor) -> None:
+    """Accept identical bytes, or a verified reproduction of identical fitted state."""
+    from src.evaluation.identity import model_identity
+
+    if not isinstance(document, dict):
+        raise ValueError("Итоговая оценка должна содержать JSON-объект")
+    current = _fingerprint(paths, predictor.metadata)
+    previous = document.get("fingerprint")
+    identity = document.get("model_identity")
+    if identity is not None and identity != model_identity(predictor):
+        raise ValueError("test уже оценён другой обученной моделью или по другому рецепту")
+    if previous != current:
+        metadata = predictor.metadata
+        ancestor = metadata.get("recipe_artifact_sha256", metadata.get("reproduced_from_artifact_sha256"))
+        invariants = ("run_id", "threshold", "processed_sha256", "split_sha256")
+        if (not isinstance(previous, dict) or identity is None
+                or not metadata.get("reproduced_from_artifact_sha256")
+                or ancestor != document.get("recipe_artifact_sha256")
+                or any(previous.get(key) != current[key] for key in invariants)):
+            raise ValueError("test уже оценён другим пакетом модели или на других данных; "
+                             "повторная оценка изменённой модели нарушает протокол")
+    expected = {"run_id": current["run_id"], "split": "test", "threshold": current["threshold"],
+                "comparison": predictor.metadata.get("comparison"),
+                "min_precision": predictor.metadata.get("min_precision")}
+    if any(document.get(key) != value for key, value in expected.items()):
+        raise ValueError("Сохранённая итоговая оценка имеет другой порог, запуск или протокол")
+
+
+def preflight(root=None, allow_non_real: bool = False, *, verify_legacy: bool = False):
     """Все проверки до чтения test. Возвращает (paths, predictor, validation_result)."""
     from src.evaluation import sources
     from src.evaluation.contract import FrozenPipelinePredictor
@@ -66,18 +95,35 @@ def preflight(root=None, allow_non_real: bool = False):
     # Validation сверяется с Диасом до test: если здесь расхождение, test не открывается.
     validation = evaluate_selected_validation(root)
     previous = load_result(root)
-    if previous is not None and previous.get("fingerprint") != _fingerprint(paths, metadata):
-        raise ValueError("test уже оценён другим пакетом модели или на других данных; "
-                         "повторная оценка изменённой модели нарушает протокол")
+    if previous is not None and not isinstance(previous, dict):
+        raise ValueError("Итоговая оценка должна содержать JSON-объект")
+    if verify_legacy and previous is None:
+        raise ValueError("Нет legacy test-результата для проверки")
+    if previous is not None:
+        if verify_legacy:
+            current = _fingerprint(paths, metadata)
+            old = previous.get("fingerprint", {})
+            if previous.get("model_identity") is not None or any(
+                old.get(key) != current[key] for key in ("run_id", "threshold", "processed_sha256", "split_sha256")
+            ):
+                raise ValueError("Проверка legacy разрешена только для того же запуска, данных и порога")
+            if previous.get("validation_vs_test") != {
+                key: {"validation": validation[key], "test": previous.get(key)} for key in COMPARED
+            }:
+                raise ValueError("Legacy-оценка не совпадает с текущими validation-метриками")
+        else:
+            validate_result(previous, paths, predictor)
     return paths, predictor, validation
 
 
-def evaluate_test(root=None, allow_non_real: bool = False) -> dict:
+def evaluate_test(root=None, allow_non_real: bool = False, *, verify_legacy: bool = False) -> dict:
     """Прочитать test, предсказать сохранённой моделью и посчитать метрики при сохранённом пороге."""
     from src.data.api import load_xy
     from src.evaluation.metrics import evaluate_scores
 
-    paths, predictor, validation = preflight(root, allow_non_real)
+    from src.evaluation.identity import model_identity
+
+    paths, predictor, validation = preflight(root, allow_non_real, verify_legacy=verify_legacy)
     metadata = predictor.metadata
     X_test, y_test = load_xy("test", path=paths.transactions)
     predictions = predictor.predict(X_test)  # контракт проверяется внутри
@@ -90,11 +136,29 @@ def evaluate_test(root=None, allow_non_real: bool = False) -> dict:
     document = {
         **result,
         "fingerprint": _fingerprint(paths, metadata),
+        "model_identity": model_identity(predictor),
+        "recipe_artifact_sha256": metadata.get("recipe_artifact_sha256",
+            metadata.get("reproduced_from_artifact_sha256", metadata["artifact_sha256"])),
         "validation_vs_test": comparison,
         "threshold_retuned": False,
         "model_retrained": False,
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
     }
+    if verify_legacy:
+        previous = load_result(root)
+        keys = (*COMPARED, "n", "n_positive", "predicted_positive", "threshold", "min_precision",
+                "precision_ci", "recall_ci", "precision_constraint_met", "comparison", "provenance")
+        if any(json.dumps(previous.get(key), sort_keys=True) != json.dumps(document.get(key), sort_keys=True) for key in keys):
+            raise ValueError("Legacy test-метрики не воспроизвелись; исходный результат не изменён")
+        document["provenance_verification"] = {
+            "reason": "Explicit fixed-model verification of a legacy result with different serialization hashes",
+            "verified_at": document["evaluated_at"], "all_reported_metrics_identical": True,
+            "threshold_retuned": False, "model_retrained": False, "original_result": previous,
+        }
+    else:
+        previous = load_result(root)
+        if previous is not None and "provenance_verification" in previous:
+            document["provenance_verification"] = previous["provenance_verification"]
     table = pd.DataFrame({
         "run_id": metadata["run_id"], "transaction_id": X_test.index.astype("int64"), "split": "test",
         "y_true": y_test.to_numpy().astype("int8"), "score": predictions["score"].to_numpy(),
@@ -128,6 +192,8 @@ def main(argv=None) -> int:
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--confirm", action="store_true", help="выполнить оценку на test")
     group.add_argument("--show", action="store_true", help="показать сохранённый результат")
+    group.add_argument("--verify-existing", action="store_true",
+                       help="явно перепроверить legacy test-результат без изменения модели и порога; сохранить историю")
     args = parser.parse_args(argv)
 
     if args.show:
@@ -135,7 +201,17 @@ def main(argv=None) -> int:
         if document is None:
             print("Итоговая оценка на test ещё не выполнялась.")
             return 1
+        preflight()  # show only a result verified against the current package
         _print_summary(document)
+        return 0
+
+    if args.verify_existing:
+        if load_result() is None:
+            raise ValueError("Нет legacy test-результата для проверки")
+        output = evaluate_test(verify_legacy=True)
+        path = save(output)
+        _print_summary(output["result"])
+        print(f"Legacy-метрики воспроизвелись полностью; исходный результат сохранён в истории: {path}")
         return 0
 
     paths, predictor, _ = preflight()

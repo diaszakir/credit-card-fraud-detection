@@ -1,3 +1,5 @@
+name: credit-card-fraud-detection
+
 x-ml-image: &ml-image
   image: credit-card-fraud:local
   build:
@@ -9,7 +11,7 @@ services:
   # Первый запуск восстанавливает данные и модель по замороженному рецепту.
   prepare:
     <<: *ml-image
-    command: ["python", "-m", "app.prepare"]
+    command: ["python", "-m", "app.prepare", "--full-app", "--check"]
     restart: "no"
     healthcheck:
       disable: true
@@ -20,6 +22,7 @@ services:
 
   app:
     <<: *ml-image
+    restart: unless-stopped
     depends_on:
       prepare:
         condition: service_completed_successfully
@@ -28,14 +31,15 @@ services:
       - -m
       - streamlit
       - run
-      - app/streamlit_app.py
+      - app/fraud_app.py
       - --server.address=0.0.0.0
       - --server.port=8501
       - --server.headless=true
       - --browser.gatherUsageStats=false
     ports:
-      - "127.0.0.1:8501:8501"
+      - "127.0.0.1:${FRAUD_APP_PORT:-8501}:8501"
     volumes:
+      - data:/app/data:ro
       - models:/app/models:ro
       - reports:/app/reports:ro
 

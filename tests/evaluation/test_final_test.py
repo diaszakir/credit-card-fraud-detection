@@ -88,3 +88,57 @@ def test_commands_report_missing_files_without_traceback(empty_project, capsys):
     for module in (metrics, plots, importance, final_test):
         assert run_cli(lambda: module.main([])) == 1
         assert "Ошибка:" in capsys.readouterr().err
+
+
+def test_legacy_verification_preserves_original_and_requires_all_metrics(data_project):
+    root = data_project['root']
+    first = final_test.evaluate_test(root, allow_non_real=True)['result']
+    first.pop('model_identity')
+    first.pop('recipe_artifact_sha256')
+    first['fingerprint']['artifact_sha256'] = '0' * 64
+    path = project_paths(root).evaluation_dir / final_test.RESULT_JSON
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(first))
+    original = path.read_bytes()
+    verified = final_test.evaluate_test(root, allow_non_real=True, verify_legacy=True)['result']
+    assert verified['provenance_verification']['original_result'] == json.loads(original)
+    assert verified['provenance_verification']['all_reported_metrics_identical']
+    assert verified['model_identity']
+    assert path.read_bytes() == original  # verification itself never publishes
+    path.write_text(json.dumps(verified))
+    repeated = final_test.evaluate_test(root, allow_non_real=True)['result']
+    assert repeated['provenance_verification'] == verified['provenance_verification']
+    first['recall'] = 0.123
+    first['validation_vs_test']['recall']['test'] = 0.123
+    path.write_text(json.dumps(first))
+    original = path.read_bytes()
+    with pytest.raises(ValueError, match='не воспроизвелись'):
+        final_test.evaluate_test(root, allow_non_real=True, verify_legacy=True)
+    assert path.read_bytes() == original
+
+
+def test_reproduced_serialization_requires_identical_state_and_lineage(data_project):
+    import copy
+    import joblib
+    from src.evaluation.contract import FrozenPipelinePredictor
+    from src.ml.artifacts import file_sha256
+    from tests.evaluation.conftest import write_lock
+
+    root = data_project['root']
+    document = final_test.evaluate_test(root, allow_non_real=True)['result']
+    paths = project_paths(root)
+    metadata = dict(data_project['metadata'])
+    metadata['reproduced_from_artifact_sha256'] = metadata['artifact_sha256']
+    joblib.dump(data_project['pipeline'], paths.model, compress=3)
+    metadata['artifact_sha256'] = file_sha256(paths.model)
+    paths.model_metadata.write_text(json.dumps(metadata))
+    write_lock(root, metadata)
+    predictor = FrozenPipelinePredictor.load(paths.model, paths.selection_lock)
+    final_test.validate_result(document, paths, predictor)
+    changed = copy.deepcopy(predictor.pipeline)
+    changed.named_steps['clf'].coef_[0, 0] += 0.5
+    with pytest.raises(ValueError, match='другой обученной'):
+        final_test.validate_result(document, paths, FrozenPipelinePredictor(changed, metadata))
+    del metadata['reproduced_from_artifact_sha256']
+    with pytest.raises(ValueError, match='другим пакетом'):
+        final_test.validate_result(document, paths, FrozenPipelinePredictor(predictor.pipeline, metadata))

@@ -7,6 +7,7 @@ import streamlit as st
 
 from app.views.common import fmt, model_label, predictor_status
 from app.views.error_analysis import outcomes
+from app.views import prediction_lab
 from src.config import FEATURE_COLUMNS, ID_COLUMN, TARGET_COLUMN
 from src.evaluation.contract import STUB_ENV_VAR, PredictorStatus, check_input_schema, split_input
 
@@ -88,7 +89,9 @@ def render() -> None:
     st.header("Fraud Prediction")
     status = predictor_status()
     show_status(status)
-    upload_tab, manual_tab = st.tabs(["CSV-файл", "Одна транзакция"])
+    lab_tab, upload_tab, manual_tab = st.tabs(["Интерактивная демонстрация", "CSV-файл", "Таблица признаков"])
+    with lab_tab:
+        prediction_lab.render(status)
     with upload_tab:
         st.caption(f"Колонки: V1–V28 и Amount; по желанию {ID_COLUMN} и {TARGET_COLUMN}.")
         st.download_button("Скачать шаблон CSV", template_csv(), file_name="transactions_template.csv",

@@ -38,7 +38,7 @@ def check_python() -> Check:
     if current == REQUIRED_PYTHON:
         return Check("Python", OK, platform.python_version())
     return Check("Python", FAIL, f"нужен Python 3.12, запущен {platform.python_version()}; "
-                                 "создайте окружение: uv venv -p 3.12 .venv")
+                                 "создайте окружение: python3.12 -m venv .venv")
 
 
 def check_requirements(path: Path | None = None) -> Check:
@@ -70,7 +70,7 @@ def check_requirements(path: Path | None = None) -> Check:
             problems.append(f"{requirement.name}: установлена {installed}, нужна {requirement.specifier}")
     if problems:
         shown = "; ".join(problems[:5]) + (f" и ещё {len(problems) - 5}" if len(problems) > 5 else "")
-        return Check("Зависимости", FAIL, f"{shown}. Исправить: uv pip install -r requirements.txt")
+        return Check("Зависимости", FAIL, f"{shown}. Исправить: python -m pip install -r requirements.txt (Python из .venv)")
     return Check("Зависимости", OK, f"{checked} пакетов совпадают с requirements.txt")
 
 
@@ -158,13 +158,30 @@ def check_app_sections(timeout: int = 120) -> list[Check]:
         logging.disable(logging.NOTSET)
 
 
+def check_test_result(paths, predictor) -> Check:
+    """Do not call test or train: validate the saved result against the loaded model."""
+    from src.evaluation.final_test import load_result, validate_result
+
+    name = "Итоговая оценка test"
+    if predictor is None:
+        return Check(name, WARN, "пропущено: модель не загружена")
+    try:
+        document = load_result(paths.root)
+        if document is None:
+            return Check(name, WARN, "нет сохранённого test_final.json; итоговая оценка недоступна")
+        validate_result(document, paths, predictor)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return Check(name, FAIL, f"несогласованный test_final.json: {exc}")
+    return Check(name, OK, "результат относится к текущей модели, данным и порогу; test не читался")
+
+
 def run_checks(root=None, with_app: bool = True) -> list[Check]:
     from src.evaluation.sources import project_paths
 
     paths = project_paths(root)
     checks = [check_python(), check_requirements(), *check_artifacts(paths)]
     model_check, predictor = check_model(paths)
-    checks += [model_check, check_prediction(paths, predictor)]
+    checks += [model_check, check_prediction(paths, predictor), check_test_result(paths, predictor)]
     if with_app:
         checks += check_app_sections()
     return checks

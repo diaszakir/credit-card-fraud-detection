@@ -28,7 +28,7 @@ SECTIONS = {
 
 def sidebar() -> str:
     st.sidebar.title("Fraud Detection")
-    section = st.sidebar.radio("Раздел", list(SECTIONS), key="section")
+    section = st.sidebar.radio("Раздел", list(SECTIONS), index=3, key="section")
     status = common.predictor_status()
     labels = {"frozen": "модель загружена", "stub": "ЗАГЛУШКА", "unavailable": "модели нет"}
     st.sidebar.caption(f"Прогнозы: {labels[status.mode]}")

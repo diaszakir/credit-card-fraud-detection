@@ -21,7 +21,7 @@
           src/evaluation/metrics.py      — AP, PR-AUC, ROC-AUC, P/R/F1, confusion matrix
           src/evaluation/curves.py, plots.py — PR-кривые, P/R от порога, сравнение моделей
           src/evaluation/errors.py, importance.py — FP/FN, permutation importance
-          src/evaluation/final_test.py   — однократная итоговая оценка test
+          src/evaluation/final_test.py   — итоговая оценка test с фиксированным порогом
                            ▼
           app/fraud_app.py + app/views/*  — Data Overview, Model Comparison,
                                             Error Analysis, Fraud Prediction
@@ -98,8 +98,8 @@ score в [0, 1], и если известен порог — `y_pred == (score >
 | 2 | `metrics.py` | `python -m src.evaluation.metrics` | метрики validation, интервалы, сверка с ML |
 | 3 | `curves.py`, `plots.py` | `python -m src.evaluation.plots` | PR, ROC, зависимость от порога, сравнение запусков |
 | 4 | `errors.py`, `sql/`, `importance.py` | `python -m src.evaluation.importance` | признаки и SQL-срезы ошибок, permutation importance |
-| 5 | `final_test.py` | `python -m src.evaluation.final_test --confirm` | однократная итоговая оценка test |
-| 6 | `check.py`, `README.md`, `requirements.in` | `python -m src.evaluation.check --strict` | проверка запуска, инструкция, зависимости через uv |
+| 5 | `final_test.py` | `python -m src.evaluation.final_test --confirm` | итоговая оценка test с фиксированным порогом |
+| 6 | `check.py`, `README.md`, `requirements.in` | `python -m src.evaluation.check --strict` | проверка запуска, инструкция, зависимости через venv и pip |
 
 Все результаты пишутся в `reports/experiments/evaluation/`; сохраняются только результаты модели
 с `provenance = "real"`. Итоговая оценка test выполнена; её запись — `test_final.json` с отпечатком
@@ -108,7 +108,23 @@ score в [0, 1], и если известен порог — `y_pred == (score >
 
 ## 6. Что нужно согласовать с командой
 
-* **Диас:** Dockerfile/compose запускают `app/streamlit_app.py`. После приёмки нового приложения —
-  переключить их на `app/fraud_app.py` (это его файлы). Старое демо до этого не удаляется.
+* Dockerfile/Compose и локальный запуск используют `app/fraud_app.py`. Сервис `prepare --full-app`
+  восстанавливает данные и модель и переносит проверенные агрегаты оценки из образа в volume.
+  При старте контейнера test не читается.
 * **Жандарбек:** живые SQL-запросы читаются через `src.db.queries.run_query`; если `fraud.db`
   нет, страница показывает сохранённые CSV из `reports/sql_results/`.
+
+
+## 7. Проверка происхождения итоговой оценки
+
+`identity.py` вычисляет SHA-256 состояния предобработки и классификатора, используемого при
+предсказании. Поля узлов деревьев хешируются отдельно, без нестабильных байтов выравнивания.
+Дополнительно проверяются рецепт, схема признаков, версии, данные и порог. Поэтому одинаковая
+восстановленная модель может иметь другие байты joblib, сохраняя проверяемую идентичность.
+Неизвестные структуры Pipeline не допускаются.
+
+`final_test.validate_result` используется CLI, диагностикой запуска и Streamlit. Изменённая
+модель, данные или порог блокируют показ test-метрик. Для legacy-результата выполнена отдельная
+проверка `--verify-existing`: все метрики воспроизвелись без изменения модели и порога.
+Исходный документ сохранён в `provenance_verification.original_result`, а повторная проверка
+помечена отдельной датой. Это не новый выбор модели по test.

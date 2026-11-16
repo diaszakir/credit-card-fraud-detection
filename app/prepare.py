@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -32,6 +33,7 @@ OUTCOMES = [
     ("FN", "Пропущенное мошенничество (FN)", 1, 0),
     ("FP", "Ложное срабатывание (FP)", 0, 1),
 ]
+EVALUATION_SEED = Path("/opt/fraud/evaluation")
 
 
 def run_module(module, *arguments):
@@ -253,11 +255,64 @@ def prepare_demo():
     return state
 
 
+def restore_evaluation_reports():
+    """Populate old and new Docker volumes from the immutable image seed.
+
+    Never run test during startup. Only the exact legacy document preserved by
+    the verified migration may be replaced; other conflicts fail closed.
+    """
+    if not EVALUATION_SEED.is_dir():
+        return
+    from src.evaluation.contract import FrozenPipelinePredictor
+    from src.evaluation.final_test import load_result, validate_result
+    from src.evaluation.sources import project_paths
+
+    paths = project_paths(ROOT_DIR)
+    predictor = FrozenPipelinePredictor.load(paths.model, paths.selection_lock)
+    source = EVALUATION_SEED / "test_final.json"
+    seed = read_json(source)
+    validate_result(seed, paths, predictor)
+    existing = load_result(ROOT_DIR)
+    if existing is not None:
+        try:
+            validate_result(existing, paths, predictor)
+        except ValueError:
+            if existing != seed.get("provenance_verification", {}).get("original_result"):
+                raise ValueError("Docker volume содержит другую итоговую оценку; сохраните её и проверьте происхождение")
+            shutil.copyfile(source, paths.evaluation_dir / "test_final.json")
+    for file in EVALUATION_SEED.rglob("*"):
+        if file.is_file() and file.suffix in (".json", ".csv", ".png"):
+            destination = paths.evaluation_dir / file.relative_to(EVALUATION_SEED)
+            if not destination.exists():
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(file, destination)
+
+
+def prepare_full_app():
+    """Create the additional sources used by all four application sections."""
+    restore_evaluation_reports()
+    steps = [
+        (Path(ROOT_DIR) / "data/processed/fraud.db", "src.data.cli", ("build-db",)),
+        (Path(ROOT_DIR) / "reports/figures/eda_01_class_balance.png", "src.data.cli", ("eda",)),
+        (Path(ROOT_DIR) / "reports/sql_results/q01_split_overview.csv", "src.data.cli", ("sql",)),
+        (Path(ROOT_DIR) / "reports/experiments/evaluation/validation_selected.json", "src.evaluation.metrics", ()),
+    ]
+    for output, module, arguments in steps:
+        if not output.is_file():
+            run_module(module, *arguments)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.parse_args()
+    parser.add_argument("--full-app", action="store_true", help="Также подготовить SQLite, EDA, SQL и оценку validation")
+    parser.add_argument("--check", action="store_true", help="Проверить готовность комплекта перед запуском сервера")
+    args = parser.parse_args()
     try:
         result = prepare_demo()
+        if args.full_app:
+            prepare_full_app()
+        if args.check:
+            run_module("src.evaluation.check", "--strict", "--no-app")
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Не удалось подготовить демонстрацию: {exc}\n")
     print(json.dumps({key: result[key] for key in ("status", "run_id", "steps_run", "test_evaluated")}, ensure_ascii=False, indent=2))

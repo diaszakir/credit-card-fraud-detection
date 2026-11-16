@@ -228,3 +228,52 @@ def test_missing_confusion_outcome_is_not_replaced_with_a_fake_example(synthetic
     monkeypatch.setattr(prepare, "load_xy", lambda split, *, path: (fixture["X"], y))
     with pytest.raises(ValueError, match="нет примера FP"):
         prepare.build_demo_examples(fixture["model"], metadata)
+
+
+def test_full_app_prepares_missing_sources_and_reuses_existing(tmp_path, monkeypatch):
+    monkeypatch.setattr(prepare, "ROOT_DIR", tmp_path)
+    calls = []
+    outputs = {
+        ("src.data.cli", "build-db"): "data/processed/fraud.db",
+        ("src.data.cli", "eda"): "reports/figures/eda_01_class_balance.png",
+        ("src.data.cli", "sql"): "reports/sql_results/q01_split_overview.csv",
+        ("src.evaluation.metrics",): "reports/experiments/evaluation/validation_selected.json",
+    }
+
+    def run(module, *arguments):
+        key = (module, *arguments)
+        calls.append(key)
+        output = tmp_path / outputs[key]
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.touch()
+
+    monkeypatch.setattr(prepare, "run_module", run)
+    prepare.prepare_full_app()
+    assert calls == list(outputs)
+    prepare.prepare_full_app()
+    assert calls == list(outputs)
+
+
+def test_cli_checks_only_after_successful_full_preparation(monkeypatch, capsys):
+    monkeypatch.setattr(sys, 'argv', ['prepare', '--full-app', '--check'])
+    calls = []
+    def ready():
+        calls.append('prepare')
+        return {'status': 'prepared', 'run_id': 'synthetic', 'steps_run': [], 'test_evaluated': False}
+    monkeypatch.setattr(prepare, 'prepare_demo', ready)
+    monkeypatch.setattr(prepare, 'prepare_full_app', lambda: calls.append('full-app'))
+    monkeypatch.setattr(prepare, 'run_module', lambda *args: calls.append(args))
+    prepare.main()
+    assert calls == ['prepare', 'full-app', ('src.evaluation.check', '--strict', '--no-app')]
+    assert 'prepared' in capsys.readouterr().out
+
+
+def test_cli_failed_preparation_never_runs_startup_check(monkeypatch):
+    monkeypatch.setattr(sys, 'argv', ['prepare', '--full-app', '--check'])
+    def failed():
+        raise ValueError('synthetic checksum mismatch')
+    monkeypatch.setattr(prepare, 'prepare_demo', failed)
+    monkeypatch.setattr(prepare, 'run_module', lambda *args: pytest.fail('startup check must not run'))
+    with pytest.raises(SystemExit) as error:
+        prepare.main()
+    assert error.value.code == 1

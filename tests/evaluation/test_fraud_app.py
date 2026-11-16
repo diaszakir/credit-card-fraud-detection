@@ -112,12 +112,79 @@ def test_model_comparison_shows_saved_test_result_only_when_it_exists(data_proje
     from src.evaluation import final_test
 
     app = open_section("Model Comparison")
-    assert any("ещё не выполнялась" in i.value for i in app.info)
+    assert any("недоступна на этом компьютере" in i.value for i in app.info)
     output = final_test.evaluate_test(data_project["root"], allow_non_real=True)
     out_dir = data_project["root"] / "reports" / "experiments" / "evaluation"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / final_test.RESULT_JSON).write_text(json.dumps(output["result"], default=list))
     app = open_section("Model Comparison")
     assert not app.exception and not app.error
-    assert not any("ещё не выполнялась" in i.value for i in app.info)
+    assert not any("недоступна на этом компьютере" in i.value for i in app.info)
     assert any("Порог" in c.value and "не менялся" in c.value for c in app.main.caption)
+
+
+def test_lab_custom_input_predicts_and_reset_clears_edits(project):
+    app = open_section("Fraud Prediction")
+    assert len(app.number_input) == 29
+    amount = next(s for s in app.number_input if s.label == "Введите сумму покупки")
+    amount.set_value(125.0).run()
+    app.button(key="lab_predict").click().run()
+    assert not app.exception and not app.error
+    values = {m.label: m.value for m in app.metric}
+    assert values["Изменено признаков"] == "1"
+    assert values["Сохранённый порог"] == f"{project['metadata']['threshold']:.4f}"
+    frame = feature_frame([0.0])
+    frame["Amount"] = 125.0
+    expected = project["pipeline"].predict_proba(frame)[:, 1][0]
+    assert values["Оценка fraud · score"] == f"{expected:.4f}"
+    # A changed input hides the old result, so it cannot be mistaken for a new forecast.
+    next(s for s in app.number_input if s.label == "V4").set_value(2.0).run()
+    assert not app.metric
+    app.button(key="lab_reset").click().run()
+    assert next(s for s in app.number_input if s.label == "V4").value == 0.0
+    assert next(s for s in app.number_input if s.label == "Введите сумму покупки").value == 0.0
+
+
+def test_lab_real_example_uses_current_frozen_predictor(project):
+    import json
+    root = project["root"]
+    examples = []
+    for i, (_, row) in enumerate(project["X_val"].iterrows()):
+        prediction = project["predicted"].iloc[i]
+        examples.append({"name": f"Example {i}", "transaction_id": int(row.name),
+                         "features": row.to_dict(), "actual_class": int(project["y_val"][i]),
+                         "expected_score": float(prediction["score"]),
+                         "expected_prediction": int(prediction["y_pred"])})
+    document = {"source_split": "validation", "run_id": project["metadata"]["run_id"],
+                "artifact_sha256": project["metadata"]["artifact_sha256"], "examples": examples}
+    (root / "reports" / "experiments" / "demo_examples.json").write_text(json.dumps(document))
+    app = open_section("Fraud Prediction")
+    assert app.selectbox(key="lab_example").value == "Example 0"
+    app.button(key="lab_predict").click().run()
+    assert not app.exception
+    assert any("Прогноз совпал" in message.value for message in app.success)
+    assert any("Фактически в датасете" in message.value for message in app.markdown)
+    assert {m.label: m.value for m in app.metric}["Изменено признаков"] == "0"
+    assert {m.label: m.value for m in app.metric}["Оценка fraud · score"] == f"{examples[0]['expected_score']:.4f}"
+
+    app.selectbox(key="lab_example").set_value("Example 2").run()
+    app.button(key="lab_predict").click().run()
+    assert any("Модель ошиблась" in message.value for message in app.warning)
+    next(slider for slider in app.slider if slider.label == "V4").set_value(2.0).run()
+    app.button(key="lab_predict").click().run()
+    assert any("фактический класс неизвестен" in message.value for message in app.info)
+    assert not any("Фактически в датасете" in message.value for message in app.markdown)
+
+    app.selectbox(key="lab_example").set_value("Свободный ввод — своя транзакция").run()
+    assert len(app.selectbox(key="lab_example").options) == 5
+    assert len(app.number_input) == 29
+    assert not any("Нет готовых транзакций" in message.value for message in app.warning)
+    next(field for field in app.number_input if field.label == "Введите сумму покупки").set_value(125.75).run()
+    next(field for field in app.number_input if field.label == "V1").set_value(25.0).run()
+    app.button(key="lab_predict").click().run()
+    assert not app.exception and not app.error
+    frame = feature_frame([25.0])
+    frame["Amount"] = 125.75
+    expected = project["pipeline"].predict_proba(frame)[:, 1][0]
+    assert {metric.label: metric.value for metric in app.metric}["Оценка fraud · score"] == f"{expected:.4f}"
+    assert not any("Фактически в датасете" in message.value for message in app.markdown)

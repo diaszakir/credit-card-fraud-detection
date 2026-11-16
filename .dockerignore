@@ -36,6 +36,11 @@ reports/experiments/**
 !reports/experiments/figures/
 reports/experiments/figures/**
 !reports/experiments/figures/*.png
+!reports/experiments/evaluation/
+reports/experiments/evaluation/**
+!reports/experiments/evaluation/*.json
+!reports/experiments/evaluation/figures/
+!reports/experiments/evaluation/figures/*.png
 
 # Даже внутри разрешённых каталогов не передаём окружения, секреты и caches.
 **/.git/
@@ -60,4 +65,5 @@ reports/experiments/figures/**
 **/*.sqlite3
 **/*.csv
 !reports/experiments/comparison.csv
+!reports/experiments/evaluation/permutation_importance_validation.csv
 DIAS_ML_REPORT.md
