@@ -1,0 +1,67 @@
+{
+  "dataset_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+  "processed_sha256": "f4af6fc58b050ba1e53a02b719fbfed90c455325fe07958420581d585719efdd",
+  "split_sha256": "c1afabb87d41bd8cebcaccce031e4f607ee1caf588b74588f0e1ad6ed30a677b",
+  "source_sha256": "515df4a5a455b48ee46ad9466cc4e7b24169c86d4cc2f266ac391f75406c7677",
+  "config_sha256": "4a00b913d02ba6d44788607b0fa9dc5d64b6d79795143e6752798213dcf73b4a",
+  "seed": 42,
+  "min_precision": 0.85,
+  "split": "validation",
+  "provenance": "real",
+  "python_version": "3.12.16",
+  "library_versions": {
+    "python": "3.12.16",
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "imbalanced-learn": "0.14.2",
+    "joblib": "1.6.0",
+    "pyarrow": "26.0.1"
+  },
+  "n_runs": 17,
+  "run_ids": [
+    "dummy_none_fixed_8fa78540bf56",
+    "logistic_regression_class_weight_cv_05522f0be93c",
+    "logistic_regression_class_weight_fixed_41ce0823cd1d",
+    "logistic_regression_none_cv_2f3b36a9d19f",
+    "logistic_regression_none_fixed_1692e8f78be3",
+    "logistic_regression_smote_cv_e3bc0da22162",
+    "logistic_regression_smote_fixed_8199db3f9fc1",
+    "logistic_regression_undersampling_cv_c663fde2657a",
+    "logistic_regression_undersampling_fixed_e9a55a414b11",
+    "random_forest_class_weight_cv_9db7932bff3b",
+    "random_forest_class_weight_fixed_2e118ba4c9e1",
+    "random_forest_none_cv_2bb17c46f85d",
+    "random_forest_none_fixed_1f2ff6ab15ba",
+    "random_forest_smote_cv_fa39d9ca7565",
+    "random_forest_smote_fixed_d61d97e1d31c",
+    "random_forest_undersampling_cv_bdb8f5b8c838",
+    "random_forest_undersampling_fixed_dadd54265a86"
+  ],
+  "feasible_run_ids": [
+    "logistic_regression_class_weight_cv_05522f0be93c",
+    "logistic_regression_class_weight_fixed_41ce0823cd1d",
+    "logistic_regression_none_cv_2f3b36a9d19f",
+    "logistic_regression_none_fixed_1692e8f78be3",
+    "logistic_regression_smote_cv_e3bc0da22162",
+    "logistic_regression_smote_fixed_8199db3f9fc1",
+    "logistic_regression_undersampling_cv_c663fde2657a",
+    "logistic_regression_undersampling_fixed_e9a55a414b11",
+    "random_forest_class_weight_cv_9db7932bff3b",
+    "random_forest_class_weight_fixed_2e118ba4c9e1",
+    "random_forest_none_cv_2bb17c46f85d",
+    "random_forest_none_fixed_1f2ff6ab15ba",
+    "random_forest_smote_cv_fa39d9ca7565",
+    "random_forest_smote_fixed_d61d97e1d31c",
+    "random_forest_undersampling_cv_bdb8f5b8c838",
+    "random_forest_undersampling_fixed_dadd54265a86"
+  ],
+  "no_feasible_threshold_run_ids": [
+    "dummy_none_fixed_8fa78540bf56"
+  ],
+  "metric_methods": {
+    "pr_auc": "trapezoidal auc(recall, precision)",
+    "average_precision": "average_precision_score"
+  }
+}

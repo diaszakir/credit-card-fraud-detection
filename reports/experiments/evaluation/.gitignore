@@ -1,0 +1,3 @@
+# Построчные прогнозы test воспроизводимы командой python -m src.evaluation.final_test --confirm
+# и, как и validation-прогнозы, не хранятся в Git. Метрики (JSON, CSV) и графики (PNG) хранятся.
+test_predictions.parquet

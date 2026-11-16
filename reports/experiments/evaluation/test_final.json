@@ -1,0 +1,90 @@
+{
+  "run_id": "random_forest_class_weight_cv_9db7932bff3b",
+  "split": "test",
+  "provenance": "real",
+  "threshold": 0.3452106858370786,
+  "comparison": ">=",
+  "min_precision": 0.85,
+  "confidence": 0.95,
+  "n": 42557,
+  "n_positive": 52,
+  "prevalence": 0.0012218906407876495,
+  "pr_auc": 0.7781330262689726,
+  "average_precision": 0.7779401542258277,
+  "roc_auc": 0.933663460407373,
+  "status": "ok",
+  "precision": 0.78,
+  "recall": 0.75,
+  "f1": 0.7647058823529411,
+  "specificity": 0.9997412069168333,
+  "false_positive_rate": 0.00025879308316668627,
+  "accuracy": 0.9994360504734826,
+  "predicted_positive": 50,
+  "precision_ci": [
+    0.6475845041874634,
+    0.8724608402978559
+  ],
+  "recall_ci": [
+    0.6179354205740265,
+    0.8476684613640423
+  ],
+  "tn": 42494,
+  "fp": 11,
+  "fn": 13,
+  "tp": 39,
+  "precision_constraint_met": false,
+  "fingerprint": {
+    "run_id": "random_forest_class_weight_cv_9db7932bff3b",
+    "artifact_sha256": "8b774d8b60bbc94ca2c167a9ae4a697f841a4123049997a3ed41fa89b21769ff",
+    "metadata_sha256": "30789edeb78d70162d2b529e75b9705642f02f62c5a2481e537babc43da44178",
+    "threshold": 0.3452106858370786,
+    "processed_sha256": "f4af6fc58b050ba1e53a02b719fbfed90c455325fe07958420581d585719efdd",
+    "split_sha256": "c1afabb87d41bd8cebcaccce031e4f607ee1caf588b74588f0e1ad6ed30a677b"
+  },
+  "validation_vs_test": {
+    "average_precision": {
+      "validation": 0.8721612606940565,
+      "test": 0.7779401542258277
+    },
+    "pr_auc": {
+      "validation": 0.8720854421990842,
+      "test": 0.7781330262689726
+    },
+    "roc_auc": {
+      "validation": 0.9777114991819145,
+      "test": 0.933663460407373
+    },
+    "precision": {
+      "validation": 0.9183673469387755,
+      "test": 0.78
+    },
+    "recall": {
+      "validation": 0.8181818181818182,
+      "test": 0.75
+    },
+    "f1": {
+      "validation": 0.8653846153846154,
+      "test": 0.7647058823529411
+    },
+    "tp": {
+      "validation": 45,
+      "test": 39
+    },
+    "fp": {
+      "validation": 4,
+      "test": 11
+    },
+    "fn": {
+      "validation": 10,
+      "test": 13
+    },
+    "tn": {
+      "validation": 42501,
+      "test": 42494
+    }
+  },
+  "threshold_retuned": false,
+  "model_retrained": false,
+  "evaluated_at": "2026-11-15T22:31:32.936216+00:00",
+  "created_at": "2026-11-15T22:31:32.952217+00:00"
+}

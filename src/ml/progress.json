@@ -1,0 +1,123 @@
+{
+  "objective": "Finish Dias ML stages with local commits; never push.",
+  "constraints": [
+    "min_precision=0.85; chronological 70/15/15 after exact raw deduplication",
+    "Do not use test rows for ML selection or final evaluation; hand off to Adam",
+    "Use simple code in the style of Assignment 3 and 4",
+    "Use configured Git identity; commit explicit files after each stage",
+    "Create DIAS_ML_REPORT.md only at the end; do not commit or ignore it"
+  ],
+  "resume": "Read AGENTS.md, AGENTS.dias.md, this file and git log. Resume the first incomplete stage. Run python -m src.ml.cli --help for saved commands.",
+  "stages": {
+    "4": {
+      "name": "Окружение и фиксированные зависимости",
+      "status": "complete",
+      "note": "Python 3.12.16; 30 точных зависимостей, включая ML; рабочая .venv обновлена. Точка восстановления сохраняется после каждого этапа.",
+      "checks": [
+        "pip check: No broken requirements found",
+        "Clean candidate environment: 78 tests passed; ML imports OK; Windows wheel resolution OK, native Windows/macOS tests unavailable"
+      ]
+    },
+    "5": {
+      "name": "Схема данных, разбиение и временные CV-фолды",
+      "status": "complete",
+      "note": "Схема, SHA-256, manifest и 3 временных фолда проверены; test rows не читались. Повторные29features разныхTime сохранены по temporal-протоколу; обязательна дополнительная novel-validation диагностика.",
+      "checks": [
+        "24 synthetic data-check tests passed",
+        "Real data check: ok_with_recurring_features; folds fraud train/eval 88/134, 222/90, 312/54",
+        "505 recurring legitimate patterns; raw float64 matches, no label conflicts, no rounding-only matches"
+      ]
+    },
+    "6": {
+      "name": "Baseline DummyClassifier",
+      "status": "complete",
+      "note": "Реальный DummyClassifier prior обучен. AP=0.0012922932330827067; допустимого порога с precision>=0.85 нет. PR-AUC по трапециям=0.5006461466165414; это интерполяционный эффект константного score, не хорошее качество baseline.",
+      "checks": [
+        "148 ML tests passed before first fit",
+        "Real baseline: no_feasible_threshold; test_evaluated=false; full train pipeline and provenance saved"
+      ]
+    },
+    "7": {
+      "name": "LogisticRegression без балансировки",
+      "status": "complete",
+      "note": "LogisticRegression none: validation AP=0.7788622161264065, precision=0.9, recall=0.4909090909090909, threshold=0.6158176799199838. Порог подобран только на validation; test не оценивался.",
+      "checks": [
+        "Real fixed experiment completed; shared prediction scores exactly match validation scores"
+      ]
+    },
+    "8": {
+      "name": "RandomForest без балансировки",
+      "status": "complete",
+      "note": "RandomForest none: precision=0.9555555555555556, recall=0.7818181818181819, AP=0.8553080427663892, threshold=0.29333333333333333. Final fit 238.62s, isolated process one thread.",
+      "checks": [
+        "Real validation result; 43 TP, 2 FP, 12 FN; no test prediction"
+      ]
+    },
+    "9": {
+      "name": "Эксперименты class_weight",
+      "status": "complete",
+      "note": "Class_weight отдельно для LR и RF: LR precision=0.9130434782608695 recall=0.7636363636363637; RF precision=0.9565217391304348 recall=0.8. Все прочие fixed параметры сохранены.",
+      "checks": [
+        "2 real validation runs saved; no test evaluation; each fit isolated and n_jobs=1"
+      ]
+    },
+    "10": {
+      "name": "Эксперименты SMOTE",
+      "status": "complete",
+      "note": "SMOTE отдельно: LR precision=0.9393939393939394 recall=0.5636363636363636; RF precision=1.0 recall=0.7818181818181819. sampling_strategy=0.1 означает minority/majority, не долю0.1 всехстрок. Применялся только внутри train Pipeline.",
+      "checks": [
+        "Both real fixed SMOTE runs completed; natural validation row count unchanged"
+      ]
+    },
+    "11": {
+      "name": "Эксперименты undersampling",
+      "status": "complete",
+      "note": "Undersampling отдельно: LR precision=0.9 recall=0.4909090909090909; RF precision=0.8958333333333334 recall=0.7818181818181819, fit4.50s. Все9fixedruns готовы, validation сохранил42560строк.",
+      "checks": [
+        "Full repository suite: 264 passed in43.33s",
+        "8 feasible learned runs; Dummy no_feasible_threshold; no test performance evaluation"
+      ]
+    },
+    "12": {
+      "name": "Подбор гиперпараметров внутри train",
+      "status": "complete",
+      "note": "Завершены все 8 CV-запусков: две модели и четыре отдельные стратегии. Параметры выбраны по средней AP трёх временных фолдов внутри train; всего готовы 17 реальных результатов.",
+      "checks": [
+        "All 17 result JSONs have matching raw/processed/split/source/config hashes; 8 CV runs completed; no test performance evaluation"
+      ]
+    },
+    "13": {
+      "name": "Сравнение моделей и выбор порога на validation",
+      "status": "complete",
+      "note": "Из 17 запусков выбран random_forest_class_weight_cv_9db7932bff3b: precision=0.9183673469387755, recall=0.8181818181818182, PR-AUC=0.8720854421990842, AP=0.8721612606940565, threshold=0.3452106858370786. Сравнение и графики сохранены.",
+      "checks": [
+        "17 runs exported with verified cache/provenance; three actual validation figures visually inspected; selected threshold finds 45/55 fraud with 4 FP"
+      ]
+    },
+    "14": {
+      "name": "Замороженный пайплайн и метаданные",
+      "status": "complete",
+      "note": "Заморожены models/fraud_pipeline.joblib, схема/порог в соседнем JSON и models/selection_lock.json. Пайплайн скопирован из выбранного train-запуска без refit; test не оценивался.",
+      "checks": [
+        "Freeze validates artifact/cache provenance including processed SHA; canonical validation score/ID/label digests saved"
+      ]
+    },
+    "15": {
+      "name": "Проверка загрузки и предсказания",
+      "status": "complete",
+      "note": "Загружен frozen joblib: на всех 42560 validation строках scores, классы и метрики идентичны исходным. Неверная схема отклоняется; synthetic пример явно помечен.",
+      "checks": [
+        "Actual handoff verify passed; 72 targeted comparison/handoff/reproduce tests passed including processed provenance, lock tampering, threshold and recipe guards"
+      ]
+    },
+    "16": {
+      "name": "Передача Адаму и итоговые проверки ML",
+      "status": "complete",
+      "note": "ML передача завершена: команды и интерфейс документированы, реальные validation результаты импортированы в SQLite, выбранный pipeline восстановлен из исходных данных в чистом клоне с идентичными scores/ID/labels/метриками. Осталось только создать личный MD после последнего коммита; отдельную чужую правку .gitignore не включать.",
+      "checks": [
+        "273 passed in 53.35s; pip check passed; git diff --check passed; actual clean-clone reproduction + artifact reload passed; 17 runs/162 metrics/680960 validation predictions in SQLite; no test evaluation; native Windows/macOS not executed"
+      ]
+    }
+  },
+  "updated_at": "2026-11-15T11:42:08.973403+00:00"
+}

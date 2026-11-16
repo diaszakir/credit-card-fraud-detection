@@ -1,0 +1,87 @@
+{
+  "policy": "feature-target statistics use the train split only",
+  "top_features_by_abs_correlation_train": [
+    {
+      "feature": "V17",
+      "correlation": -0.36854770172838225
+    },
+    {
+      "feature": "V14",
+      "correlation": -0.3145795239603147
+    },
+    {
+      "feature": "V12",
+      "correlation": -0.2654898605061258
+    },
+    {
+      "feature": "V10",
+      "correlation": -0.24345534515827275
+    },
+    {
+      "feature": "V3",
+      "correlation": -0.23007676998772117
+    },
+    {
+      "feature": "V16",
+      "correlation": -0.22221382546660465
+    }
+  ],
+  "v_feature_dependence_train": {
+    "mean_abs_corr": 0.018260526773808117,
+    "max_abs_corr": 0.10334493794878573,
+    "n_pairs": 378
+  },
+  "hour_with_highest_fraud_rate": {
+    "hour_index": 26,
+    "fraud_rate_percent": 1.5561959654178674,
+    "n_transactions": 1735,
+    "n_fraud": 27
+  },
+  "hours_with_fewer_than_100_transactions": 0,
+  "split_summary": {
+    "train": {
+      "n_rows": 198609,
+      "share_of_rows_percent": 70.00028196217477,
+      "n_fraud": 366,
+      "n_legitimate": 198243,
+      "fraud_rate_percent": 0.1842816790779874,
+      "time_min": 0,
+      "time_max": 132906,
+      "id_min": 0,
+      "id_max": 199324
+    },
+    "validation": {
+      "n_rows": 42560,
+      "share_of_rows_percent": 15.000387697990314,
+      "n_fraud": 55,
+      "n_legitimate": 42505,
+      "fraud_rate_percent": 0.12922932330827067,
+      "time_min": 132907,
+      "time_max": 151320,
+      "id_min": 199325,
+      "id_max": 242066
+    },
+    "test": {
+      "n_rows": 42557,
+      "share_of_rows_percent": 14.999330339834911,
+      "n_fraud": 52,
+      "n_legitimate": 42505,
+      "fraud_rate_percent": 0.12218906407876495,
+      "time_min": 151321,
+      "time_max": 172792,
+      "id_min": 242067,
+      "id_max": 284806
+    }
+  },
+  "files": {
+    "class_balance": "reports/figures/eda_01_class_balance.png",
+    "amount_by_class": "reports/figures/eda_02_amount_by_class.png",
+    "time_profile": "reports/figures/eda_03_time_profile.png",
+    "feature_target_correlation": "reports/figures/eda_04_feature_target_correlation.png",
+    "correlation_heatmap": "reports/figures/eda_05_correlation_heatmap.png",
+    "top_feature_boxplots": "reports/figures/eda_06_top_feature_boxplots.png",
+    "split_drift": "reports/figures/eda_07_split_drift.png",
+    "interactive_time_profile": "reports/figures/eda_08_interactive_time_profile.html",
+    "interactive_feature_scatter": "reports/figures/eda_09_interactive_feature_scatter.html"
+  }
+}

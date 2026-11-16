@@ -1,0 +1,18 @@
+{
+  "selected_run_id": "random_forest_class_weight_cv_9db7932bff3b",
+  "model_path": "models/fraud_pipeline.joblib",
+  "metadata_path": "models/fraud_pipeline.json",
+  "artifact_sha256": "69796eae8d606e7f34b29094f8f8329bb2bd32bce7f5d406cd5b84cf2d038dd0",
+  "metadata_sha256": "6f2a055ce66396a9698955d89d3d23edcbf0299c51a7d9fd2346b293b29fe3bb",
+  "threshold": 0.3452106858370786,
+  "comparison": ">=",
+  "min_precision": 0.85,
+  "dataset_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+  "processed_sha256": "f4af6fc58b050ba1e53a02b719fbfed90c455325fe07958420581d585719efdd",
+  "split_sha256": "c1afabb87d41bd8cebcaccce031e4f607ee1caf588b74588f0e1ad6ed30a677b",
+  "source_sha256": "515df4a5a455b48ee46ad9466cc4e7b24169c86d4cc2f266ac391f75406c7677",
+  "config_sha256": "4a00b913d02ba6d44788607b0fa9dc5d64b6d79795143e6752798213dcf73b4a",
+  "frozen_at": "2026-11-15T08:59:05.215434+00:00",
+  "test_evaluated": false,
+  "evaluation_owner": "Adam"
+}

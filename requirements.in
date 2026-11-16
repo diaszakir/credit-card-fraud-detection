@@ -1,0 +1,28 @@
+# Прямые зависимости проекта (Python 3.12). Из этого файла uv собирает requirements.txt:
+#
+#   uv pip compile requirements.in -o requirements.txt --python-version 3.12 --universal
+#
+# Версии зафиксированы: сохранённая модель проверяет версии numpy, scipy, scikit-learn,
+# imbalanced-learn и joblib при загрузке (src/ml/artifacts.py), поэтому менять их можно
+# только вместе с переобучением модели и по согласованию с командой.
+
+# Данные и SQL (Жандарбек)
+pandas==3.1.1
+numpy==2.5.4
+pyarrow==26.0.1
+sqlalchemy==2.1.8
+
+# Модели (Диас)
+scikit-learn==1.9.1
+imbalanced-learn==0.14.2
+joblib==1.6.0
+scipy==1.18.1
+
+# Графики и приложение (Адам)
+matplotlib==3.11.2
+seaborn==0.13.2
+plotly==7.1.0
+streamlit==1.67.0
+
+# Тесты
+pytest==9.2.0

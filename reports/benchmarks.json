@@ -1,0 +1,134 @@
+{
+  "storage_formats": {
+    "repeats": 3,
+    "platform": "linux",
+    "idle_peak_rss_mib": 828.41015625,
+    "file_sizes_mib": {
+      "csv": 143.8415069580078,
+      "parquet_float64_zstd": 72.65163707733154,
+      "parquet_optimized_zstd": 43.41159915924072,
+      "parquet_optimized_snappy": 46.38164806365967
+    },
+    "variants": [
+      {
+        "variant": "csv_float64",
+        "seconds_median": 1.0091963539999824,
+        "seconds_all": [
+          0.5453657100000555,
+          3.4881890890000022,
+          1.0091963539999824
+        ],
+        "frame_mib": 67.36017990112305,
+        "peak_rss_mib": 828.41015625,
+        "peak_above_idle_mib": 0.0,
+        "rows": 284807,
+        "columns": 31,
+        "speedup_vs_baseline": 1.0,
+        "frame_memory_vs_baseline": 1.0
+      },
+      {
+        "variant": "csv_chunked_optimized",
+        "seconds_median": 1.7741690139999946,
+        "seconds_all": [
+          0.7885882030000175,
+          1.7741690139999946,
+          3.0002242670000214
+        ],
+        "frame_mib": 33.95176601409912,
+        "peak_rss_mib": 828.41015625,
+        "peak_above_idle_mib": 0.0,
+        "rows": 284807,
+        "columns": 31,
+        "speedup_vs_baseline": 0.5688276291809848,
+        "frame_memory_vs_baseline": 0.504033184946008
+      },
+      {
+        "variant": "parquet_float64",
+        "seconds_median": 0.6374340680000614,
+        "seconds_all": [
+          0.8407114869999077,
+          0.6374340680000614,
+          0.5909174879999455
+        ],
+        "frame_mib": 67.36017990112305,
+        "peak_rss_mib": 828.41015625,
+        "peak_above_idle_mib": 0.0,
+        "rows": 284807,
+        "columns": 31,
+        "speedup_vs_baseline": 1.5832168449457351,
+        "frame_memory_vs_baseline": 1.0
+      },
+      {
+        "variant": "parquet_optimized",
+        "seconds_median": 0.17313295099995685,
+        "seconds_all": [
+          0.477131636000081,
+          0.17313295099995685,
+          0.13649390799992034
+        ],
+        "frame_mib": 33.95176601409912,
+        "peak_rss_mib": 828.41015625,
+        "peak_above_idle_mib": 0.0,
+        "rows": 284807,
+        "columns": 31,
+        "speedup_vs_baseline": 5.829025313617128,
+        "frame_memory_vs_baseline": 0.504033184946008
+      },
+      {
+        "variant": "parquet_optimized_3cols",
+        "seconds_median": 0.029651792999970894,
+        "seconds_all": [
+          0.02770043700002134,
+          0.034937371999944844,
+          0.029651792999970894
+        ],
+        "frame_mib": 3.5310964584350586,
+        "peak_rss_mib": 828.41015625,
+        "peak_above_idle_mib": 0.0,
+        "rows": 284807,
+        "columns": 3,
+        "speedup_vs_baseline": 34.03491836061897,
+        "frame_memory_vs_baseline": 0.05242112570985261
+      }
+    ],
+    "notes": [
+      "seconds = time of the load call only, median of repeats, each in a fresh process",
+      "frame_mib = DataFrame.memory_usage(deep=True)",
+      "peak_above_idle_mib = process peak RSS minus an idle interpreter with pandas + pyarrow imported"
+    ]
+  },
+  "pandas_vs_sql": {
+    "repeats": 5,
+    "platform": "linux",
+    "tasks": [
+      {
+        "task": "hourly counts (GROUP BY)",
+        "pandas_end_to_end_seconds": 0.014810624999995525,
+        "pandas_in_memory_seconds": 0.006106008999950063,
+        "sql_seconds": 0.02536371799999415,
+        "results_agree": true
+      },
+      {
+        "task": "split overview (JOIN + GROUP BY)",
+        "pandas_end_to_end_seconds": 0.07132057999990593,
+        "pandas_in_memory_seconds": 0.040260725000052844,
+        "sql_seconds": 0.0625274819999504,
+        "results_agree": true
+      },
+      {
+        "task": "3-hour rolling rate (CTE + window)",
+        "pandas_end_to_end_seconds": 0.011319133999904807,
+        "pandas_in_memory_seconds": 0.008107731000109197,
+        "sql_seconds": 0.02702030900002228,
+        "results_agree": true
+      },
+      {
+        "task": "exact duplicates over 30 columns (GROUP BY ... HAVING)",
+        "pandas_end_to_end_seconds": 0.41081778500006294,
+        "pandas_in_memory_seconds": 0.32321030499997505,
+        "sql_seconds": 1.6184340770000745,
+        "results_agree": true
+      }
+    ]
+  }
+}

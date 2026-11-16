@@ -1,0 +1,33 @@
+{
+  "protocol_version": "dias-ml-v1",
+  "seed": 42,
+  "min_precision": 0.85,
+  "positive_label": 1,
+  "comparison": ">=",
+  "feature_columns": "src.config.FEATURE_COLUMNS",
+  "split_policy": "chronological-70-15-15-raw-exact-dedup-first-v1",
+  "cv": {
+    "n_splits": 3,
+    "window": "expanding",
+    "intervals": "four equal Time intervals within train",
+    "scoring": "average_precision",
+    "parameter_ties": "first configuration in ParameterGrid order"
+  },
+  "models": ["dummy", "logistic_regression", "random_forest"],
+  "strategies": ["none", "class_weight", "smote", "undersampling"],
+  "sampling_strategy": 0.1,
+  "smote_k_neighbors": 5,
+  "recurring_features": {
+    "policy": "chronological_recurring_features_retained",
+    "reason": "Different-Time legitimate transactions are not exact raw duplicates; keep the agreed temporal forecasting population.",
+    "selection_population": "full_validation",
+    "sensitivity": "Also report fixed-threshold metrics on validation feature patterns absent from train; never select a threshold on this subset."
+  },
+  "threshold_ties": ["maximum recall", "maximum precision", "highest threshold"],
+  "model_ties": ["maximum recall", "maximum precision", "maximum pr_auc", "fixed model order", "fixed strategy order", "run_id"],
+  "model_order": ["logistic_regression", "random_forest", "dummy"],
+  "strategy_order": ["none", "class_weight", "smote", "undersampling"],
+  "resource_policy": {"n_jobs": 1, "blas_threads": 1},
+  "test_policy": "Final evaluation belongs to Adam; ML commands do not load test rows.",
+  "status": "Working protocol fixed before experiments under user authorization to complete the ML stages."
+}

@@ -1,0 +1,23 @@
+{
+  "checked_at": "2026-11-15T09:00:28.988124+00:00",
+  "database_ids_and_splits_match_manifest": true,
+  "database_id_rows_checked": 283726,
+  "import": {
+    "model_runs": 17,
+    "run_metrics": 162,
+    "predictions": 680960
+  },
+  "table_counts": {
+    "model_runs": 17,
+    "run_metrics": 162,
+    "predictions": 680960
+  },
+  "prediction_rows_by_split": {
+    "validation": 680960
+  },
+  "foreign_key_violations": 0,
+  "selected_confusion_matrix_matches": true,
+  "selected_run_id": "random_forest_class_weight_cv_9db7932bff3b",
+  "labels_read": "Only transaction IDs present in validation predictions",
+  "test_evaluated": false
+}

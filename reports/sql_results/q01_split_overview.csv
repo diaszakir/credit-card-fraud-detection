@@ -1,0 +1,4 @@
+split_name,n_transactions,n_fraud,fraud_rate_pct,time_min_sec,time_max_sec,total_amount,fraud_amount
+train,198609,366,0.1843,0,132906,17847351.02,44026.4
+validation,42560,55,0.1292,132907,151320,4157938.74,8396.11
+test,42557,52,0.1222,151321,172792,3096711.92,6168.88

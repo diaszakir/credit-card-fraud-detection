@@ -1,0 +1,15 @@
+{
+  "dataset": "mlg-ulb/creditcardfraud",
+  "provider_url": "https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud",
+  "metadata_api": "https://www.kaggle.com/api/v1/datasets/view/mlg-ulb/creditcardfraud",
+  "catalog_version_checked": 3,
+  "catalog_last_updated": "2018-03-23T01:17:27.913Z",
+  "license_name_from_provider": "Database: Open Database, Contents: Database Contents",
+  "download_mirror": "https://storage.googleapis.com/download.tensorflow.org/data/creditcard.csv",
+  "downloaded_file_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+  "downloaded_file_size_bytes": 150828752,
+  "checked_at": "2026-11-15T07:54:52.562212+00:00",
+  "citation": "Dal Pozzolo et al. (2015). Calibrating Probability with Undersampling for Unbalanced Classification. IEEE CIDM.",
+  "citation_source": "Kaggle provider description",
+  "distribution_policy": "Raw transaction files are not committed; consult the provider license for reuse and attribution terms."
+}

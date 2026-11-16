@@ -1,0 +1,306 @@
+{
+  "checked_at": "2026-11-15T12:34:49.687679+00:00",
+  "status": "passed",
+  "commands": [
+    {
+      "command": [
+        "docker",
+        "compose",
+        "exec",
+        "-T",
+        "app",
+        "python",
+        "-"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "exec",
+        "-T",
+        "app",
+        "python",
+        "-"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "run",
+        "--rm",
+        "cli",
+        "-m",
+        "src.data.cli",
+        "build-db"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "run",
+        "--rm",
+        "cli",
+        "-m",
+        "src.data.cli",
+        "query"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "run",
+        "--rm",
+        "cli",
+        "-m",
+        "src.data.cli",
+        "query",
+        "q01_split_overview"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--network",
+        "none",
+        "--volume",
+        "credit-card-fraud-detection_data:/app/data:ro",
+        "--volume",
+        "credit-card-fraud-detection_models:/app/models:ro",
+        "--volume",
+        "credit-card-fraud-detection_reports:/app/reports:ro",
+        "credit-card-fraud:local",
+        "python",
+        "-m",
+        "app.prepare"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "down"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "up",
+        "-d",
+        "--no-build",
+        "--pull",
+        "never"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "exec",
+        "-T",
+        "app",
+        "python",
+        "-"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "docker",
+        "version",
+        "--format",
+        "{{.Server.Version}}"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "inspect",
+        "credit-card-fraud:local",
+        "--format",
+        "{{.Id}}"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "image_inventory": {
+    "uid": 10001,
+    "raw_csv_absent": true,
+    "processed_data_absent": true,
+    "joblib_absent": true,
+    "private_report_absent": true,
+    "git_directory_absent": true,
+    "source_hash_matches_recipe": true,
+    "ml_library_versions_match_recipe": true,
+    "streamlit_version": "1.67.0"
+  },
+  "runtime_read_only_mounts": [
+    "/app/models",
+    "/app/reports"
+  ],
+  "clean_first_start": {
+    "uid": 10001,
+    "run_id": "random_forest_class_weight_cv_9db7932bff3b",
+    "threshold": 0.3452106858370786,
+    "validation_metrics": {
+      "pr_auc": 0.8720854421990842,
+      "average_precision": 0.8721612606940565,
+      "precision": 0.9183673469387755,
+      "recall": 0.8181818181818182,
+      "accuracy": 0.999671052631579,
+      "tn": 42501,
+      "fp": 4,
+      "fn": 10,
+      "tp": 45,
+      "precision_constraint_met": true
+    },
+    "artifact_sha256": "266656474f9cf648e1c91797bd20013b68324b85e6d92c5bac2fe36158fc420d",
+    "metadata_sha256": "b0fd59a1a075ec91e70d073be234adeda65b7c3601bf0af5e54584b96c3089b0",
+    "model_mtime_ns": 1794745884468881309,
+    "preparation_steps": [
+      [
+        "src.data.cli",
+        "download"
+      ],
+      [
+        "src.data.cli",
+        "optimize"
+      ],
+      [
+        "src.data.cli",
+        "split"
+      ],
+      [
+        "src.ml.data_checks",
+        "--review-recurring"
+      ],
+      [
+        "src.ml.reproduce"
+      ],
+      [
+        "src.ml.handoff",
+        "verify"
+      ]
+    ],
+    "reproduction": {
+      "status": "reproduced",
+      "run_id": "random_forest_class_weight_cv_9db7932bff3b",
+      "fit_performed": true,
+      "fitted_splits": [
+        "train"
+      ],
+      "evaluated_splits": [
+        "validation"
+      ],
+      "cv_performed": false,
+      "threshold_retuned": false,
+      "test_evaluated": false,
+      "threshold": 0.3452106858370786,
+      "comparison": ">=",
+      "scores_values_match": true,
+      "validation_ids_match": true,
+      "validation_labels_match": true,
+      "validation_metrics_match": true,
+      "validation_rows": 42560,
+      "validation_metrics": {
+        "pr_auc": 0.8720854421990842,
+        "average_precision": 0.8721612606940565,
+        "precision": 0.9183673469387755,
+        "recall": 0.8181818181818182,
+        "accuracy": 0.999671052631579,
+        "tn": 42501,
+        "fp": 4,
+        "fn": 10,
+        "tp": 45,
+        "precision_constraint_met": true
+      },
+      "original_artifact_sha256": "69796eae8d606e7f34b29094f8f8329bb2bd32bce7f5d406cd5b84cf2d038dd0",
+      "artifact_sha256": "266656474f9cf648e1c91797bd20013b68324b85e6d92c5bac2fe36158fc420d",
+      "artifact_binary_identical": false,
+      "reproduced_at": "2026-11-15T12:31:24.363454+00:00"
+    },
+    "verification": {
+      "selected_run_id": "random_forest_class_weight_cv_9db7932bff3b",
+      "artifact_sha256": "266656474f9cf648e1c91797bd20013b68324b85e6d92c5bac2fe36158fc420d",
+      "validation_rows_checked": 42560,
+      "scores_identical_after_reload": true,
+      "classes_identical_after_reload": true,
+      "metrics_identical_after_reload": true,
+      "invalid_schema_rejected": true,
+      "schema_error": "invalid input columns: missing=['V1'], extra=[]",
+      "synthetic_example_checked": true,
+      "threshold": 0.3452106858370786,
+      "comparison": ">=",
+      "test_evaluated": false,
+      "validation_metrics": {
+        "pr_auc": 0.8720854421990842,
+        "average_precision": 0.8721612606940565,
+        "precision": 0.9183673469387755,
+        "recall": 0.8181818181818182,
+        "accuracy": 0.999671052631579,
+        "tn": 42501,
+        "fp": 4,
+        "fn": 10,
+        "tp": 45,
+        "precision_constraint_met": true
+      }
+    }
+  },
+  "real_container_ui": {
+    "saved_runs_shown": 17,
+    "outcomes_checked": [
+      "TP",
+      "TN",
+      "FN",
+      "FP"
+    ],
+    "example_scores_and_classes_match": true,
+    "app_test_exceptions": 0
+  },
+  "health_http_status": 200,
+  "page_http_status": 200,
+  "sqlite": {
+    "build_verified": true,
+    "query_list_available": true,
+    "q01_split_overview_executed": true
+  },
+  "offline_prepare": {
+    "network": "none",
+    "mounts_read_only": true,
+    "status": "already_prepared",
+    "steps_run": []
+  },
+  "restart_without_build_or_pull": {
+    "app_health": "healthy",
+    "model_and_metadata_unchanged": true,
+    "model_retrained": false
+  },
+  "docker_tests": {
+    "passed": 295,
+    "seconds": 42.45
+  },
+  "host_tests": {
+    "passed": 294,
+    "note": "Before the cross-volume publication fix; its targeted 31 checks passed afterwards."
+  },
+  "docker_version": "29.5.3",
+  "image_id": "sha256:722bf8786f4599983353814f7ac1ea234c5690b929692f983ef636e4f221e59a",
+  "test_performance_evaluated": false,
+  "finished_at": "2026-11-15T12:35:53.391597+00:00"
+}
